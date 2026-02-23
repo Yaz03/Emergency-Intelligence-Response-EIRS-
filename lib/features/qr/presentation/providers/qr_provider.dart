@@ -57,7 +57,7 @@ class QrProvider extends ChangeNotifier {
 
       // 5. Build QR URL
       // TODO: Replace with your deployed domain
-      const baseUrl = 'https://YOUR_DOMAIN';
+      const baseUrl = 'https://medi-qr-eight.vercel.app';
       _qrData = '$baseUrl/emergency.html?token=$token';
       _tokenExpiresAt = expiresAt;
 
