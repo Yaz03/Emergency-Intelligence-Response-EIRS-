@@ -1,0 +1,43 @@
+name: mediqr
+description: Smart Medical ID – Patient App
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.0-0
+  flutter: '>=3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # State Management
+  provider: ^6.1.2
+
+  # Networking
+  dio: ^5.7.0
+
+  # Secure Storage
+  flutter_secure_storage: ^9.2.4
+
+  # QR Code Generation
+  qr_flutter: ^4.1.0
+
+  # Location Services
+  geolocator: ^13.0.2
+
+  # Encryption
+  encrypt: ^5.0.3
+  crypto: ^3.0.6
+
+  # Google Fonts
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
