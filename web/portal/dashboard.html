@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incident Dashboard — MediQR</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        /* ── Header ─────────────────────────────────────── */
+        .header {
+            background: #16213e;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .header .user-info {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: rgba(230, 57, 70, 0.15);
+            border: 1px solid rgba(230, 57, 70, 0.3);
+            color: #e63946;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* ── Container ──────────────────────────────────── */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        /* ── Loading ────────────────────────────────────── */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 40vh;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            border-top-color: #0d6efd;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── Tabs ───────────────────────────────────────── */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            background: #0f1629;
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #888;
+        }
+
+        .tab.active {
+            background: #0d6efd;
+            color: #fff;
+        }
+
+        /* ── Incident Card ──────────────────────────────── */
+        .incident-card {
+            background: #16213e;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .incident-card:hover {
+            border-color: rgba(13, 110, 253, 0.4);
+        }
+
+        .incident-card.selected {
+            border-color: #0d6efd;
+        }
+
+        .incident-card .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .incident-card .row:last-child {
+            margin-bottom: 0;
+        }
+
+        .incident-card .label {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .incident-card .value {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-pending {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .status-completed {
+            background: rgba(46, 196, 134, 0.15);
+            color: #2ec486;
+            border: 1px solid rgba(46, 196, 134, 0.3);
+        }
+
+        /* ── Form ───────────────────────────────────────── */
+        .form-section {
+            background: #16213e;
+            border-radius: 14px;
+            padding: 24px;
+            margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            display: none;
+        }
+
+        .form-section.visible {
+            display: block;
+        }
+
+        .form-section h3 {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #0d6efd;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #aaa;
+            margin-bottom: 6px;
+        }
+
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            background: #0f1629;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: #0d6efd;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-group select option {
+            background: #16213e;
+        }
+
+        /* Severity selector */
+        .severity-grid {
+            display: flex;
+            gap: 8px;
+        }
+
+        .severity-btn {
+            flex: 1;
+            padding: 10px 0;
+            text-align: center;
+            background: #0f1629;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #888;
+        }
+
+        .severity-btn.active {
+            border-color: #0d6efd;
+            color: #0d6efd;
+            background: rgba(13, 110, 253, 0.1);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #2ec486, #28a96c);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .success-msg {
+            background: rgba(46, 196, 134, 0.1);
+            border: 1px solid rgba(46, 196, 134, 0.3);
+            color: #2ec486;
+            padding: 14px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #555;
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div>
+            <h1>📋 Incident Dashboard</h1>
+            <div class="user-info" id="user-email">Loading…</div>
+        </div>
+        <button class="logout-btn" id="logout-btn">Sign Out</button>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p style="margin-top:12px; color:#888; font-size:14px;">Loading incidents…</p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container" id="main-content" style="display:none;">
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" id="tab-pending" data-status="pending">⏳ Pending</div>
+            <div class="tab" id="tab-completed" data-status="completed">✅ Completed</div>
+        </div>
+
+        <!-- Incident List -->
+        <div id="incident-list"></div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state" style="display:none;">
+            <div class="icon">📭</div>
+            <p>No incidents found</p>
+        </div>
+
+        <!-- Completion Form -->
+        <div class="form-section" id="form-section">
+            <h3>Complete Incident Report</h3>
+
+            <div class="form-group">
+                <label>Incident Type</label>
+                <select id="incident-type">
+                    <option value="">— Select type —</option>
+                    <option value="cardiac">🫀 Cardiac Emergency</option>
+                    <option value="respiratory">🫁 Respiratory Distress</option>
+                    <option value="trauma">🩹 Trauma / Injury</option>
+                    <option value="neurological">🧠 Neurological Event</option>
+                    <option value="allergic">⚠️ Allergic Reaction</option>
+                    <option value="diabetic">💉 Diabetic Emergency</option>
+                    <option value="seizure">⚡ Seizure</option>
+                    <option value="other">📋 Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Severity (1 = Low, 5 = Critical)</label>
+                <div class="severity-grid">
+                    <div class="severity-btn" data-severity="1">1</div>
+                    <div class="severity-btn" data-severity="2">2</div>
+                    <div class="severity-btn" data-severity="3">3</div>
+                    <div class="severity-btn" data-severity="4">4</div>
+                    <div class="severity-btn" data-severity="5">5</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Reason / Notes</label>
+                <textarea id="reason" placeholder="Describe the incident details…"></textarea>
+            </div>
+
+            <div class="success-msg" id="success-msg">✅ Incident report completed successfully!</div>
+
+            <button class="submit-btn" id="submit-btn">Complete Report</button>
+        </div>
+    </div>
+
+    <script>
+        // ── Supabase Config ──────────────────────────────────────────────────
+        const SUPABASE_URL = 'https://krpmrkxustljymgnwrzq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtycG1ya3h1c3RsanltZ253cnpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MjIxNDIsImV4cCI6MjA4NzM5ODE0Mn0.SmP5GhPK9u2K-hpMFmIAwR00T9CzFLEY8ROGeC0m69w';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ── State ────────────────────────────────────────────────────────────
+        let allIncidents = [];
+        let selectedIncidentId = null;
+        let selectedSeverity = null;
+        let currentFilter = 'pending';
+
+        // ── DOM ──────────────────────────────────────────────────────────────
+        const $loading = document.getElementById('loading');
+        const $main = document.getElementById('main-content');
+        const $list = document.getElementById('incident-list');
+        const $empty = document.getElementById('empty-state');
+        const $form = document.getElementById('form-section');
+        const $success = document.getElementById('success-msg');
+        const $submitBtn = document.getElementById('submit-btn');
+
+        // ── Utility ──────────────────────────────────────────────────────────
+
+        function getParam(name) {
+            return new URLSearchParams(window.location.search).get(name);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '—';
+            const d = new Date(dateStr);
+            return d.toLocaleString('en-IN', {
+                day: 'numeric', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit',
+            });
+        }
+
+        // ── Auth Check ───────────────────────────────────────────────────────
+
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            document.getElementById('user-email').textContent = session.user.email;
+            return session;
+        }
+
+        // ── Logout ───────────────────────────────────────────────────────────
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = 'login.html';
+        });
+
+        // ── Fetch Incidents ──────────────────────────────────────────────────
+
+        async function fetchIncidents() {
+            const { data, error } = await supabase
+                .from('incidents')
+                .select('*')
+                .order('scan_time', { ascending: false });
+
+            if (error) {
+                console.error('Failed to fetch incidents:', error.message);
+                return [];
+            }
+
+            return data || [];
+        }
+
+        // ── Render Incidents ─────────────────────────────────────────────────
+
+        function renderIncidents() {
+            const filtered = allIncidents.filter(i => i.status === currentFilter);
+
+            if (filtered.length === 0) {
+                $list.innerHTML = '';
+                $empty.style.display = 'block';
+                $form.classList.remove('visible');
+                return;
+            }
+
+            $empty.style.display = 'none';
+
+            $list.innerHTML = filtered.map(incident => `
+        <div class="incident-card ${incident.id === selectedIncidentId ? 'selected' : ''}"
+             data-id="${incident.id}">
+          <div class="row">
+            <span class="label">Scan Time</span>
+            <span class="value">${formatDate(incident.scan_time)}</span>
+          </div>
+          <div class="row">
+            <span class="label">Location</span>
+            <span class="value">
+              ${incident.latitude && incident.longitude
+                    ? `<a href="https://maps.google.com/?q=${incident.latitude},${incident.longitude}" target="_blank" style="color:#0d6efd; text-decoration:none;">
+                    📍 ${Number(incident.latitude).toFixed(4)}, ${Number(incident.longitude).toFixed(4)}
+                  </a>`
+                    : 'GPS unavailable'}
+            </span>
+          </div>
+          <div class="row">
+            <span class="label">Status</span>
+            <span class="status-badge status-${incident.status}">${incident.status}</span>
+          </div>
+          ${incident.incident_type ? `
+          <div class="row">
+            <span class="label">Type</span>
+            <span class="value">${incident.incident_type}</span>
+          </div>` : ''}
+          ${incident.severity ? `
+          <div class="row">
+            <span class="label">Severity</span>
+            <span class="value">${'🔴'.repeat(incident.severity)}${'⚪'.repeat(5 - incident.severity)}</span>
+          </div>` : ''}
+          ${incident.reason ? `
+          <div class="row">
+            <span class="label">Reason</span>
+            <span class="value" style="max-width:70%">${incident.reason}</span>
+          </div>` : ''}
+        </div>
+      `).join('');
+
+            // Click handlers
+            document.querySelectorAll('.incident-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const id = card.dataset.id;
+                    const incident = allIncidents.find(i => i.id === id);
+                    if (incident && incident.status === 'pending') {
+                        selectIncident(id);
+                    }
+                });
+            });
+        }
+
+        /** Select an incident for completion */
+        function selectIncident(id) {
+            selectedIncidentId = id;
+            $form.classList.add('visible');
+            $success.style.display = 'none';
+
+            // Reset form
+            document.getElementById('incident-type').value = '';
+            document.getElementById('reason').value = '';
+            selectedSeverity = null;
+            document.querySelectorAll('.severity-btn').forEach(b => b.classList.remove('active'));
+
+            renderIncidents();
+
+            // Scroll to form
+            $form.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ── Severity Selector ────────────────────────────────────────────────
+
+        document.querySelectorAll('.severity-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                selectedSeverity = parseInt(btn.dataset.severity);
+                document.querySelectorAll('.severity-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // ── Submit Completion ────────────────────────────────────────────────
+
+        $submitBtn.addEventListener('click', async () => {
+            if (!selectedIncidentId) return;
+
+            const incidentType = document.getElementById('incident-type').value;
+            const reason = document.getElementById('reason').value.trim();
+
+            if (!incidentType) {
+                alert('Please select an incident type.');
+                return;
+            }
+            if (!selectedSeverity) {
+                alert('Please select a severity level.');
+                return;
+            }
+
+            $submitBtn.disabled = true;
+            $submitBtn.textContent = 'Submitting…';
+
+            const { error } = await supabase
+                .from('incidents')
+                .update({
+                    incident_type: incidentType,
+                    severity: selectedSeverity,
+                    reason: reason || null,
+                    status: 'completed',
+                })
+                .eq('id', selectedIncidentId);
+
+            if (error) {
+                alert('Failed to update: ' + error.message);
+                $submitBtn.disabled = false;
+                $submitBtn.textContent = 'Complete Report';
+                return;
+            }
+
+            // Success
+            $success.style.display = 'block';
+            $submitBtn.textContent = '✅ Completed';
+
+            // Refresh list after delay
+            setTimeout(async () => {
+                allIncidents = await fetchIncidents();
+                selectedIncidentId = null;
+                $form.classList.remove('visible');
+                $submitBtn.disabled = false;
+                $submitBtn.textContent = 'Complete Report';
+                renderIncidents();
+            }, 1500);
+        });
+
+        // ── Tabs ─────────────────────────────────────────────────────────────
+
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                currentFilter = tab.dataset.status;
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                selectedIncidentId = null;
+                $form.classList.remove('visible');
+                renderIncidents();
+            });
+        });
+
+        // ── Init ─────────────────────────────────────────────────────────────
+
+        async function init() {
+            const session = await checkAuth();
+            if (!session) return;
+
+            allIncidents = await fetchIncidents();
+
+            $loading.style.display = 'none';
+            $main.style.display = 'block';
+
+            // Auto-select incident if coming from emergency page
+            const incidentId = getParam('incident_id');
+            if (incidentId) {
+                selectIncident(incidentId);
+            }
+
+            renderIncidents();
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

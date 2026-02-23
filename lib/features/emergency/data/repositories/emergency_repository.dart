@@ -1,18 +1,26 @@
-import '../../../../core/constants/api_constants.dart';
-import '../../../../core/network/dio_client.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+
 import '../models/emergency_model.dart';
 
 class EmergencyRepository {
-  final DioClient _client;
+  final sb.SupabaseClient _client;
 
-  EmergencyRepository({required DioClient client}) : _client = client;
+  EmergencyRepository({sb.SupabaseClient? client})
+    : _client = client ?? sb.Supabase.instance.client;
 
-  /// POST /emergency/incident
+  /// Insert an emergency incident into the `emergency_incidents` table.
   Future<EmergencyIncident> sendIncident(EmergencyIncident incident) async {
-    final response = await _client.post(
-      ApiConstants.emergency,
-      data: incident.toJson(),
-    );
-    return EmergencyIncident.fromJson(response.data);
+    final userId = _client.auth.currentUser!.id;
+    final json = incident.toJson();
+    json['user_id'] = userId;
+
+    final data =
+        await _client
+            .from('emergency_incidents')
+            .insert(json)
+            .select()
+            .single();
+
+    return EmergencyIncident.fromJson(data);
   }
 }

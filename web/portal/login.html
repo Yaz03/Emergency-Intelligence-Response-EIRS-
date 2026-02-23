@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthcare Login — MediQR</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            background: #1a1a2e;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: #16213e;
+            border-radius: 20px;
+            padding: 40px 32px;
+            width: 100%;
+            max-width: 400px;
+            margin: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo .icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+
+        .logo h1 {
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .logo p {
+            font-size: 13px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #aaa;
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: #0f1629;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: #0d6efd;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error-msg {
+            background: rgba(230, 57, 70, 0.15);
+            border: 1px solid rgba(230, 57, 70, 0.3);
+            color: #ff6b6b;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #888;
+            font-size: 13px;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-card">
+        <div class="logo">
+            <div class="icon">🏥</div>
+            <h1>Healthcare Login</h1>
+            <p>Sign in to complete incident reports</p>
+        </div>
+
+        <div class="error-msg" id="error-msg"></div>
+
+        <form id="login-form">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="doctor@hospital.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="submit-btn" id="submit-btn">Sign In</button>
+        </form>
+
+        <a class="back-link" href="javascript:history.back()">← Back to Emergency Page</a>
+    </div>
+
+    <script>
+        // ── Supabase Config ──────────────────────────────────────────────────
+        const SUPABASE_URL = 'https://krpmrkxustljymgnwrzq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtycG1ya3h1c3RsanltZ253cnpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MjIxNDIsImV4cCI6MjA4NzM5ODE0Mn0.SmP5GhPK9u2K-hpMFmIAwR00T9CzFLEY8ROGeC0m69w';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ── DOM ──────────────────────────────────────────────────────────────
+        const $form = document.getElementById('login-form');
+        const $error = document.getElementById('error-msg');
+        const $submitBtn = document.getElementById('submit-btn');
+
+        /** Get URL parameter */
+        function getParam(name) {
+            return new URLSearchParams(window.location.search).get(name);
+        }
+
+        /** Show error message */
+        function showError(msg) {
+            $error.textContent = msg;
+            $error.style.display = 'block';
+        }
+
+        /** Hide error message */
+        function hideError() {
+            $error.style.display = 'none';
+        }
+
+        // ── Check if already logged in ──────────────────────────────────────
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                redirectToDashboard();
+            }
+        }
+
+        /** Redirect to dashboard with incident_id if present */
+        function redirectToDashboard() {
+            const incidentId = getParam('incident_id');
+            const url = incidentId
+                ? `dashboard.html?incident_id=${incidentId}`
+                : 'dashboard.html';
+            window.location.href = url;
+        }
+
+        // ── Login ────────────────────────────────────────────────────────────
+        $form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showError('Please fill in all fields.');
+                return;
+            }
+
+            $submitBtn.disabled = true;
+            $submitBtn.textContent = 'Signing in…';
+
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+
+            if (error) {
+                showError(error.message);
+                $submitBtn.disabled = false;
+                $submitBtn.textContent = 'Sign In';
+                return;
+            }
+
+            // Success → redirect to dashboard
+            redirectToDashboard();
+        });
+
+        // Check session on load
+        checkSession();
+    </script>
+</body>
+
+</html>

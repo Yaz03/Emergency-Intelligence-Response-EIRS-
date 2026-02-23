@@ -1,25 +1,43 @@
-import '../../../../core/constants/api_constants.dart';
-import '../../../../core/network/dio_client.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+
 import '../models/profile_model.dart';
 
-/// Data‑layer repository for the profile endpoints.
+/// Data-layer repository for the profile – uses Supabase Database.
 class ProfileRepository {
-  final DioClient _client;
+  final sb.SupabaseClient _client;
 
-  ProfileRepository({required DioClient client}) : _client = client;
+  ProfileRepository({sb.SupabaseClient? client})
+    : _client = client ?? sb.Supabase.instance.client;
 
-  /// GET /profile
+  /// Fetch the current user's profile.
   Future<ProfileModel> getProfile() async {
-    final response = await _client.get(ApiConstants.profile);
-    return ProfileModel.fromJson(response.data);
+    final userId = _client.auth.currentUser!.id;
+    final data =
+        await _client
+            .from('profiles')
+            .select()
+            .eq('user_id', userId)
+            .maybeSingle();
+
+    if (data == null) {
+      return ProfileModel.empty();
+    }
+    return ProfileModel.fromJson(data);
   }
 
-  /// PUT /profile/update
+  /// Create or update the current user's profile (upsert).
   Future<ProfileModel> updateProfile(ProfileModel profile) async {
-    final response = await _client.put(
-      ApiConstants.profileUpdate,
-      data: profile.toJson(),
-    );
-    return ProfileModel.fromJson(response.data);
+    final userId = _client.auth.currentUser!.id;
+    final json = profile.toJson();
+    json['user_id'] = userId;
+
+    final data =
+        await _client
+            .from('profiles')
+            .upsert(json, onConflict: 'user_id')
+            .select()
+            .single();
+
+    return ProfileModel.fromJson(data);
   }
 }

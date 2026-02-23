@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 
@@ -8,7 +9,12 @@ import '../constants/app_constants.dart';
 class EncryptionHelper {
   EncryptionHelper._();
 
-  static final _key = encrypt.Key.fromUtf8(AppConstants.encryptionKey);
+  /// Derive a 32-byte (256-bit) key using SHA-256 hash of the passphrase.
+  static final _key = encrypt.Key(
+    Uint8List.fromList(
+      sha256.convert(utf8.encode(AppConstants.encryptionKey)).bytes,
+    ),
+  );
   static final _iv = encrypt.IV.fromUtf8(AppConstants.encryptionIV);
   static final _encrypter = encrypt.Encrypter(encrypt.AES(_key));
 

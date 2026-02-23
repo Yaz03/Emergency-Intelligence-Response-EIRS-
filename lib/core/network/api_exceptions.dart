@@ -15,25 +15,24 @@ class ApiException implements Exception {
 }
 
 class NetworkException extends ApiException {
-  const NetworkException({String message = 'No internet connection'})
-      : super(message: message);
+  const NetworkException({super.message = 'No internet connection'});
 }
 
 class UnauthorizedException extends ApiException {
-  const UnauthorizedException({String message = 'Session expired. Please login again.'})
-      : super(message: message, statusCode: 401);
+  const UnauthorizedException({super.message = 'Session expired. Please login again.'})
+      : super(statusCode: 401);
 }
 
 class ServerException extends ApiException {
-  const ServerException({String message = 'Server error. Please try again later.'})
-      : super(message: message, statusCode: 500);
+  const ServerException({super.message = 'Server error. Please try again later.'})
+      : super(statusCode: 500);
 }
 
 class ValidationException extends ApiException {
   final Map<String, dynamic>? errors;
 
   const ValidationException({
-    String message = 'Validation failed',
+    super.message = 'Validation failed',
     this.errors,
-  }) : super(message: message, statusCode: 422);
+  }) : super(statusCode: 422);
 }

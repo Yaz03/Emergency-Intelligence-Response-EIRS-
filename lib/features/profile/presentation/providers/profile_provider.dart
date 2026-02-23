@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
-import '../../../../core/network/api_exceptions.dart';
 import '../../data/models/profile_model.dart';
 import '../../data/repositories/profile_repository.dart';
 
@@ -14,7 +14,7 @@ class ProfileProvider extends ChangeNotifier {
   String? _errorMessage;
 
   ProfileProvider({required ProfileRepository repository})
-      : _repository = repository;
+    : _repository = repository;
 
   // ── Getters ─────────────────────────────────────────────────────────────
   ProfileStatus get status => _status;
@@ -31,7 +31,7 @@ class ProfileProvider extends ChangeNotifier {
     try {
       _profile = await _repository.getProfile();
       _status = ProfileStatus.loaded;
-    } on ApiException catch (e) {
+    } on sb.PostgrestException catch (e) {
       _errorMessage = e.message;
       _status = ProfileStatus.error;
     } catch (_) {
@@ -51,7 +51,7 @@ class ProfileProvider extends ChangeNotifier {
       _status = ProfileStatus.loaded;
       notifyListeners();
       return true;
-    } on ApiException catch (e) {
+    } on sb.PostgrestException catch (e) {
       _errorMessage = e.message;
       _status = ProfileStatus.error;
       notifyListeners();

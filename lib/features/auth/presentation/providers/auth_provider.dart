@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
-import '../../../../core/network/api_exceptions.dart';
-import '../../../../core/storage/secure_storage_service.dart';
 import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository.dart';
 
@@ -10,17 +9,12 @@ enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 /// Provider managing authentication state across the app.
 class AuthProvider extends ChangeNotifier {
   final AuthRepository _repository;
-  final SecureStorageService _storage;
 
   AuthStatus _status = AuthStatus.initial;
   UserModel? _user;
   String? _errorMessage;
 
-  AuthProvider({
-    required AuthRepository repository,
-    required SecureStorageService storage,
-  })  : _repository = repository,
-        _storage = storage;
+  AuthProvider({required AuthRepository repository}) : _repository = repository;
 
   // ── Getters ─────────────────────────────────────────────────────────────
   AuthStatus get status => _status;
@@ -31,8 +25,8 @@ class AuthProvider extends ChangeNotifier {
 
   // ── Check stored session ────────────────────────────────────────────────
   Future<void> checkAuthStatus() async {
-    final hasToken = await _storage.hasToken();
-    if (hasToken) {
+    if (_repository.hasSession) {
+      _user = _repository.currentUser;
       _status = AuthStatus.authenticated;
     } else {
       _status = AuthStatus.unauthenticated;
@@ -41,27 +35,19 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // ── Login ───────────────────────────────────────────────────────────────
-  Future<bool> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> login({required String email, required String password}) async {
     _setLoading();
     try {
       final response = await _repository.login(
         email: email,
         password: password,
       );
-      await _storage.saveTokens(
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-        userId: response.user.id,
-      );
       _user = response.user;
       _status = AuthStatus.authenticated;
       _errorMessage = null;
       notifyListeners();
       return true;
-    } on ApiException catch (e) {
+    } on sb.AuthException catch (e) {
       _setError(e.message);
       return false;
     } catch (e) {
@@ -85,17 +71,12 @@ class AuthProvider extends ChangeNotifier {
         password: password,
         phone: phone,
       );
-      await _storage.saveTokens(
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-        userId: response.user.id,
-      );
       _user = response.user;
       _status = AuthStatus.authenticated;
       _errorMessage = null;
       notifyListeners();
       return true;
-    } on ApiException catch (e) {
+    } on sb.AuthException catch (e) {
       _setError(e.message);
       return false;
     } catch (e) {
@@ -106,7 +87,7 @@ class AuthProvider extends ChangeNotifier {
 
   // ── Logout ──────────────────────────────────────────────────────────────
   Future<void> logout() async {
-    await _storage.clearTokens();
+    await _repository.logout();
     _user = null;
     _status = AuthStatus.unauthenticated;
     _errorMessage = null;

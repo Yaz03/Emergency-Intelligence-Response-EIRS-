@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergency Medical ID</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      background: #1a1a2e;
+      color: #fff;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #e63946, #c1121f);
+      padding: 20px 24px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(230, 57, 70, 0.4);
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .header .badge {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 4px 12px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .loading,
+    .error-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #e63946;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .error-page .icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+
+    .error-page h2 {
+      font-size: 20px;
+      margin-bottom: 8px;
+      color: #e63946;
+    }
+
+    .error-page p {
+      color: #aaa;
+      max-width: 320px;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 20px 16px;
+    }
+
+    .patient-card {
+      background: #16213e;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .card-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .card-header .avatar {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #e63946, #ff6b6b);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .card-header .name {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .card-header .age {
+      font-size: 13px;
+      color: #aaa;
+      margin-top: 2px;
+    }
+
+    .info-grid {
+      padding: 16px 20px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      font-size: 13px;
+      color: #888;
+      font-weight: 500;
+    }
+
+    .info-value {
+      font-size: 14px;
+      font-weight: 600;
+      text-align: right;
+      max-width: 60%;
+    }
+
+    .blood-badge {
+      display: inline-block;
+      padding: 4px 14px;
+      background: linear-gradient(135deg, #e63946, #c1121f);
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 1px;
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .tag {
+      padding: 3px 10px;
+      background: rgba(230, 57, 70, 0.15);
+      border: 1px solid rgba(230, 57, 70, 0.3);
+      border-radius: 6px;
+      font-size: 12px;
+      color: #ff6b6b;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #e63946;
+      margin: 20px 0 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .contact-card {
+      background: linear-gradient(135deg, rgba(230, 57, 70, 0.15), rgba(230, 57, 70, 0.05));
+      border: 1px solid rgba(230, 57, 70, 0.3);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .contact-card .contact-name {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .contact-card .contact-phone {
+      font-size: 20px;
+      font-weight: 800;
+      color: #e63946;
+      margin-top: 8px;
+    }
+
+    .contact-card .contact-relation {
+      font-size: 13px;
+      color: #aaa;
+    }
+
+    .call-btn {
+      display: block;
+      margin-top: 12px;
+      padding: 12px;
+      background: #e63946;
+      color: #fff;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .incident-banner {
+      background: rgba(46, 196, 134, 0.1);
+      border: 1px solid rgba(46, 196, 134, 0.3);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      text-align: center;
+      font-size: 13px;
+      color: #2ec486;
+    }
+
+    .action-btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      margin-bottom: 32px;
+      transition: transform 0.15s;
+    }
+
+    .action-btn:active {
+      transform: scale(0.98);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 16px;
+      font-size: 12px;
+      color: #555;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <h1>🚨 EMERGENCY MEDICAL ID</h1>
+    <div class="badge">AUTHORIZED ACCESS ONLY</div>
+  </div>
+
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p style="margin-top:16px; color:#aaa;">Validating emergency access…</p>
+  </div>
+
+  <div id="error-page" class="error-page" style="display:none;">
+    <div class="icon">⚠️</div>
+    <h2 id="error-title">Access Denied</h2>
+    <p id="error-message">This emergency link is invalid or has expired.</p>
+  </div>
+
+  <div id="patient-data" class="container" style="display:none;">
+    <div class="patient-card">
+      <div class="card-header">
+        <div class="avatar" id="avatar-initial">?</div>
+        <div>
+          <div class="name" id="patient-name">—</div>
+          <div class="age" id="patient-age">—</div>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="info-row">
+          <span class="info-label">Blood Group</span>
+          <span class="info-value"><span class="blood-badge" id="blood-group">—</span></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Date of Birth</span>
+          <span class="info-value" id="dob">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Allergies</span>
+          <span class="info-value">
+            <div class="tag-list" id="allergies"></div>
+          </span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Medications</span>
+          <span class="info-value" id="medications">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Medical Conditions</span>
+          <span class="info-value">
+            <div class="tag-list" id="conditions"></div>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">📞 Emergency Contact</div>
+    <div class="contact-card">
+      <div class="contact-name" id="contact-name">—</div>
+      <div class="contact-relation" id="contact-relation">—</div>
+      <div class="contact-phone" id="contact-phone">—</div>
+      <a id="call-btn" class="call-btn" href="tel:">📞 Call Emergency Contact</a>
+    </div>
+
+    <div class="incident-banner" id="incident-status">
+      📍 Recording incident location…
+    </div>
+
+    <a class="action-btn" id="complete-btn" href="login.html" style="display:none;">
+      🔒 Complete Incident Report (Healthcare Staff)
+    </a>
+
+    <div class="footer">Smart Medical ID • Emergency Access Portal</div>
+  </div>
+
+  <!-- Load Supabase FIRST, then our script -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    (function () {
+      // ── Supabase Config ────────────────────────────────────────────────
+      var SUPABASE_URL = 'https://krpmrkxustljymgnwrzq.supabase.co';
+      var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtycG1ya3h1c3RsanltZ253cnpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MjIxNDIsImV4cCI6MjA4NzM5ODE0Mn0.SmP5GhPK9u2K-hpMFmIAwR00T9CzFLEY8ROGeC0m69w';
+
+      if (!window.supabase || !window.supabase.createClient) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error-page').style.display = 'flex';
+        document.getElementById('error-title').textContent = 'Loading Error';
+        document.getElementById('error-message').textContent = 'Failed to load. Please check your internet connection and refresh.';
+        return;
+      }
+
+      var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      console.log('Supabase client created successfully');
+
+      // ── DOM References ─────────────────────────────────────────────────
+      var $loading = document.getElementById('loading');
+      var $error = document.getElementById('error-page');
+      var $errorTitle = document.getElementById('error-title');
+      var $errorMessage = document.getElementById('error-message');
+      var $data = document.getElementById('patient-data');
+      var $incidentStatus = document.getElementById('incident-status');
+      var $completeBtn = document.getElementById('complete-btn');
+
+      function showError(title, message) {
+        $loading.style.display = 'none';
+        $data.style.display = 'none';
+        $error.style.display = 'flex';
+        $errorTitle.textContent = title;
+        $errorMessage.textContent = message;
+      }
+
+      function getParam(name) {
+        return new URLSearchParams(window.location.search).get(name);
+      }
+
+      function calculateAge(dob) {
+        if (!dob) return 'Unknown';
+        var birth = new Date(dob);
+        if (isNaN(birth.getTime())) return dob;
+        var today = new Date();
+        var age = today.getFullYear() - birth.getFullYear();
+        var monthDiff = today.getMonth() - birth.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
+        return age + ' years old';
+      }
+
+      function renderTags(containerId, text) {
+        var container = document.getElementById(containerId);
+        if (!text || text.trim() === '') {
+          container.innerHTML = '<span class="tag">None reported</span>';
+          return;
+        }
+        var items = text.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+        container.innerHTML = items.map(function (item) { return '<span class="tag">' + item + '</span>'; }).join('');
+      }
+
+      // ── Validate Token ─────────────────────────────────────────────────
+      async function validateToken(token) {
+        console.log('Validating token:', token);
+        var result = await sb.from('emergency_tokens').select('*').eq('token', token).single();
+        console.log('Token result:', result.data, result.error);
+
+        if (result.error || !result.data) {
+          showError('Invalid Token', 'This emergency link is not valid. Please scan the QR code again.');
+          return null;
+        }
+
+        if (new Date(result.data.expires_at) < new Date()) {
+          showError('Token Expired', 'This emergency link has expired. Please ask the patient to generate a new QR code.');
+          return null;
+        }
+
+        return result.data;
+      }
+
+      // ── Fetch Patient Profile ──────────────────────────────────────────
+      async function fetchPatientProfile(patientId) {
+        console.log('Fetching profile for:', patientId);
+        var result = await sb.from('profiles').select('*').eq('user_id', patientId).single();
+        console.log('Profile result:', result.data, result.error);
+
+        if (result.error || !result.data) {
+          showError('Profile Not Found', 'Could not retrieve patient medical information.');
+          return null;
+        }
+        return result.data;
+      }
+
+      // ── Display Patient Info ───────────────────────────────────────────
+      function displayPatientInfo(profile) {
+        document.getElementById('patient-name').textContent = profile.full_name || 'Unknown';
+        document.getElementById('avatar-initial').textContent = (profile.full_name || '?').charAt(0).toUpperCase();
+        document.getElementById('patient-age').textContent = calculateAge(profile.date_of_birth);
+        document.getElementById('blood-group').textContent = profile.blood_group || '—';
+        document.getElementById('dob').textContent = profile.date_of_birth || '—';
+        document.getElementById('medications').textContent = profile.medications || 'None reported';
+        renderTags('allergies', profile.allergies);
+        renderTags('conditions', profile.medical_conditions);
+
+        document.getElementById('contact-name').textContent = profile.emergency_contact_name || 'Not set';
+        document.getElementById('contact-relation').textContent = profile.emergency_contact_relation || '';
+        document.getElementById('contact-phone').textContent = profile.emergency_contact_phone || '—';
+
+        var callBtn = document.getElementById('call-btn');
+        if (profile.emergency_contact_phone) {
+          callBtn.href = 'tel:' + profile.emergency_contact_phone;
+        } else {
+          callBtn.style.display = 'none';
+        }
+
+        $loading.style.display = 'none';
+        $data.style.display = 'block';
+      }
+
+      // ── Create Incident ────────────────────────────────────────────────
+      async function createIncident(patientId) {
+        var latitude = null, longitude = null;
+
+        try {
+          var pos = await new Promise(function (resolve, reject) {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true, timeout: 10000,
+            });
+          });
+          latitude = pos.coords.latitude;
+          longitude = pos.coords.longitude;
+        } catch (e) {
+          console.warn('Geolocation not available:', e.message);
+        }
+
+        var result = await sb.from('incidents').insert({
+          patient_id: patientId,
+          latitude: latitude,
+          longitude: longitude,
+          status: 'pending',
+        }).select().single();
+
+        if (result.error) {
+          console.error('Failed to create incident:', result.error.message);
+          $incidentStatus.textContent = '⚠️ Could not record incident.';
+          $incidentStatus.style.borderColor = 'rgba(230,57,70,0.3)';
+          $incidentStatus.style.color = '#e63946';
+          return;
+        }
+
+        if (latitude && longitude) {
+          $incidentStatus.textContent = '✅ Incident recorded • ' + latitude.toFixed(4) + ', ' + longitude.toFixed(4);
+        } else {
+          $incidentStatus.textContent = '✅ Incident recorded (GPS unavailable)';
+        }
+
+        $completeBtn.href = 'login.html?incident_id=' + result.data.id;
+        $completeBtn.style.display = 'block';
+      }
+
+      // ── Main Flow ──────────────────────────────────────────────────────
+      async function init() {
+        console.log('Emergency page init started');
+        var token = getParam('token');
+        if (!token) {
+          showError('Missing Token', 'No emergency token provided. Please scan a valid QR code.');
+          return;
+        }
+
+        var tokenData = await validateToken(token);
+        if (!tokenData) return;
+
+        var profile = await fetchPatientProfile(tokenData.patient_id);
+        if (!profile) return;
+
+        displayPatientInfo(profile);
+        createIncident(tokenData.patient_id);
+      }
+
+      init();
+    })();
+  </script>
+</body>
+
+</html>

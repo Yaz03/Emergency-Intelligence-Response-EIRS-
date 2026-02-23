@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner — MediQR Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            background: #1a1a2e;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px;
+        }
+
+        h1 {
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        p {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+        }
+
+        video {
+            width: 100%;
+            display: block;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        .scan-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border: 3px solid #e63946;
+            border-radius: 16px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.5;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .result {
+            margin-top: 24px;
+            padding: 20px;
+            background: #16213e;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 500px;
+            display: none;
+            word-break: break-all;
+        }
+
+        .result h3 {
+            color: #2ec486;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .result a {
+            color: #0d6efd;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+
+        .result .url-text {
+            font-family: monospace;
+            font-size: 13px;
+            color: #ccc;
+            margin: 8px 0;
+            padding: 12px;
+            background: #0f1629;
+            border-radius: 8px;
+        }
+
+        .open-btn {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #e63946, #c1121f);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .status {
+            margin-top: 16px;
+            font-size: 13px;
+            color: #888;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>📷 QR Code Scanner</h1>
+    <p>Hold your phone's QR code in front of the camera</p>
+
+    <div class="video-container">
+        <video id="video" autoplay playsinline></video>
+        <div class="scan-overlay"></div>
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <div class="status" id="status">Starting camera…</div>
+
+    <div class="result" id="result">
+        <h3>✅ QR Code Detected!</h3>
+        <div class="url-text" id="qr-content"></div>
+        <a class="open-btn" id="open-link" href="#" target="_blank">Open Emergency Page →</a>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const $status = document.getElementById('status');
+        const $result = document.getElementById('result');
+        const $qrContent = document.getElementById('qr-content');
+        const $openLink = document.getElementById('open-link');
+
+        let scanning = true;
+
+        // Start Camera
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: { ideal: 640 } }
+                });
+                video.srcObject = stream;
+                video.play();
+                $status.textContent = 'Camera active — scanning for QR code…';
+                requestAnimationFrame(scanFrame);
+            } catch (err) {
+                $status.textContent = '❌ Camera error: ' + err.message;
+                $status.style.color = '#e63946';
+            }
+        }
+
+        // Scan each frame for QR codes
+        function scanFrame() {
+            if (!scanning) return;
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: 'dontInvert',
+                });
+
+                if (code && code.data) {
+                    onQrDetected(code.data);
+                    return;
+                }
+            }
+
+            requestAnimationFrame(scanFrame);
+        }
+
+        // Handle detected QR
+        function onQrDetected(data) {
+            scanning = false;
+            $status.textContent = '✅ QR code scanned successfully!';
+            $status.style.color = '#2ec486';
+            $qrContent.textContent = data;
+            $result.style.display = 'block';
+
+            let targetUrl;
+            if (data.startsWith('http')) {
+                targetUrl = data.replace('https://YOUR_DOMAIN', 'http://localhost:8080');
+            } else {
+                targetUrl = 'http://localhost:8080/emergency.html?token=' + encodeURIComponent(data);
+            }
+
+            $openLink.href = targetUrl;
+            $openLink.textContent = 'Open Emergency Page →';
+        }
+
+        startCamera();
+    </script>
+</body>
+
+</html>
