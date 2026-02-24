@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/theme/app_theme.dart';
+import 'features/account/presentation/screens/account_screen.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/auth/presentation/screens/register_screen.dart';
@@ -26,6 +27,7 @@ class MediQRApp extends StatelessWidget {
             LoginScreen.routeName: (_) => const LoginScreen(),
             RegisterScreen.routeName: (_) => const RegisterScreen(),
             HomeScreen.routeName: (_) => const HomeScreen(),
+            AccountScreen.routeName: (_) => const AccountScreen(),
           },
         );
       },

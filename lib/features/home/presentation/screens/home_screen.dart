@@ -5,6 +5,8 @@ import 'package:mediqr/features/auth/presentation/providers/auth_provider.dart';
 import 'package:mediqr/features/profile/presentation/screens/profile_screen.dart';
 import 'package:mediqr/features/qr/presentation/screens/qr_screen.dart';
 import 'package:mediqr/features/emergency/presentation/screens/emergency_screen.dart';
+import 'package:mediqr/features/account/presentation/screens/account_screen.dart';
+import 'package:mediqr/features/profile/presentation/providers/profile_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -32,10 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: pages,
-      ),
+      body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (i) => setState(() => _currentIndex = i),
@@ -68,24 +67,51 @@ class _HomeScreenState extends State<HomeScreen> {
 
 // ── Dashboard (landing tab) ─────────────────────────────────────────────────
 
-class _DashboardPage extends StatelessWidget {
+class _DashboardPage extends StatefulWidget {
   final ValueChanged<int> onTabSelected;
 
   const _DashboardPage({required this.onTabSelected});
 
   @override
+  State<_DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<_DashboardPage> {
+  bool _tutorialExpanded = true;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final auth = context.watch<AuthProvider>();
+    final profileProvider = context.watch<ProfileProvider>();
+    final avatarIndex = profileProvider.profile.avatarIndex;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Smart Medical ID'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () => _logout(context),
+          // Avatar / Account button
+          GestureDetector(
+            onTap:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AccountScreen()),
+                ),
+            child: Container(
+              margin: const EdgeInsets.only(right: 12),
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  kAvatarEmojis[avatarIndex],
+                  style: const TextStyle(fontSize: 20),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -96,7 +122,7 @@ class _DashboardPage extends StatelessWidget {
           children: [
             // ── Greeting ──────────────────────────────────────────────
             Text(
-              'Welcome back${auth.user?.name != null ? ', ${auth.user!.name}' : ''}!',
+              'Welcome${auth.user?.name != null ? ', ${auth.user!.name}' : ''}! 👋',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -108,59 +134,207 @@ class _DashboardPage extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
+
+            // ── How It Works Tutorial ─────────────────────────────────
+            Card(
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                children: [
+                  InkWell(
+                    onTap:
+                        () => setState(
+                          () => _tutorialExpanded = !_tutorialExpanded,
+                        ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.lightbulb_outline,
+                            color: Colors.amber.shade700,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'How It Works',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const Spacer(),
+                          AnimatedRotation(
+                            turns: _tutorialExpanded ? 0.5 : 0,
+                            duration: const Duration(milliseconds: 200),
+                            child: const Icon(Icons.expand_more, size: 22),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  AnimatedCrossFade(
+                    firstChild: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: Column(
+                        children: const [
+                          _TutorialStep(
+                            step: '1',
+                            icon: Icons.edit_note,
+                            color: Colors.teal,
+                            title: 'Fill Your Profile',
+                            desc:
+                                'Add your medical details — blood group, allergies, medications, and emergency contacts.',
+                          ),
+                          SizedBox(height: 12),
+                          _TutorialStep(
+                            step: '2',
+                            icon: Icons.qr_code_2,
+                            color: Colors.indigo,
+                            title: 'Generate QR Code',
+                            desc:
+                                'A secure, time-limited QR code is created with your encrypted medical ID.',
+                          ),
+                          SizedBox(height: 12),
+                          _TutorialStep(
+                            step: '3',
+                            icon: Icons.document_scanner_outlined,
+                            color: Colors.blue,
+                            title: 'Healthcare Scans',
+                            desc:
+                                'In an emergency, healthcare workers scan your QR to instantly access your medical info.',
+                          ),
+                          SizedBox(height: 12),
+                          _TutorialStep(
+                            step: '4',
+                            icon: Icons.emergency,
+                            color: Colors.red,
+                            title: 'Emergency SOS',
+                            desc:
+                                'Press the SOS button to send GPS location and SMS alerts to your emergency contacts.',
+                          ),
+                        ],
+                      ),
+                    ),
+                    secondChild: const SizedBox.shrink(),
+                    crossFadeState:
+                        _tutorialExpanded
+                            ? CrossFadeState.showFirst
+                            : CrossFadeState.showSecond,
+                    duration: const Duration(milliseconds: 250),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
 
             // ── Quick Actions ─────────────────────────────────────────
+            Text(
+              'Quick Actions',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
             _QuickAction(
               icon: Icons.person_outline,
               title: 'Medical Profile',
               subtitle: 'View or edit your medical details',
               color: Colors.teal,
-              onTap: () => onTabSelected(1),
+              onTap: () => widget.onTabSelected(1),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             _QuickAction(
               icon: Icons.qr_code_2,
               title: 'My QR Code',
               subtitle: 'Show your encrypted medical ID',
               color: Colors.indigo,
-              onTap: () => onTabSelected(2),
+              onTap: () => widget.onTabSelected(2),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             _QuickAction(
               icon: Icons.emergency,
               title: 'Emergency SOS',
-              subtitle: 'Send GPS alert to emergency services',
+              subtitle: 'Send GPS alert to emergency contacts',
               color: Colors.red,
-              onTap: () => onTabSelected(3),
+              onTap: () => widget.onTabSelected(3),
+            ),
+            const SizedBox(height: 10),
+            _QuickAction(
+              icon: Icons.account_circle_outlined,
+              title: 'Account Settings',
+              subtitle: 'Avatar, name, password reset',
+              color: Colors.purple,
+              onTap:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AccountScreen()),
+                  ),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Future<void> _logout(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to sign out?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+// ── Tutorial Step Widget ────────────────────────────────────────────────────
+
+class _TutorialStep extends StatelessWidget {
+  final String step;
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String desc;
+
+  const _TutorialStep({
+    required this.step,
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.desc,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: color.withAlpha(25),
+            borderRadius: BorderRadius.circular(8),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Logout'),
+          child: Center(child: Icon(icon, color: color, size: 18)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Step $step: $title',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                desc,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
-    if (confirmed == true && context.mounted) {
-      await context.read<AuthProvider>().logout();
-    }
   }
 }
 

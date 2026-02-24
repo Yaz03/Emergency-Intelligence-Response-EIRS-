@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/utils/validators.dart';
+import '../../../home/presentation/screens/home_screen.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/auth_text_field.dart';
 import 'login_screen.dart';
@@ -46,7 +47,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (!mounted) return;
 
-    if (!success && auth.errorMessage != null) {
+    if (success) {
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account created successfully! Welcome!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      // Navigate to home and clear the stack
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(HomeScreen.routeName, (route) => false);
+    } else if (auth.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(auth.errorMessage!),
@@ -126,24 +139,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     prefixIcon: Icons.lock_outline,
                     isPassword: true,
                     textInputAction: TextInputAction.done,
-                    validator: (v) =>
-                        Validators.confirmPassword(v, _passwordCtrl.text),
+                    validator:
+                        (v) =>
+                            Validators.confirmPassword(v, _passwordCtrl.text),
                   ),
                   const SizedBox(height: 8),
 
                   // ── Submit ────────────────────────────────────────────
                   ElevatedButton(
                     onPressed: auth.isLoading ? null : _submit,
-                    child: auth.isLoading
-                        ? const SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Register'),
+                    child:
+                        auth.isLoading
+                            ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Colors.white,
+                              ),
+                            )
+                            : const Text('Register'),
                   ),
                   const SizedBox(height: 16),
 
@@ -156,10 +171,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         style: theme.textTheme.bodyMedium,
                       ),
                       GestureDetector(
-                        onTap: () => Navigator.pushReplacementNamed(
-                          context,
-                          LoginScreen.routeName,
-                        ),
+                        onTap:
+                            () => Navigator.pushReplacementNamed(
+                              context,
+                              LoginScreen.routeName,
+                            ),
                         child: Text(
                           'Sign In',
                           style: theme.textTheme.bodyMedium?.copyWith(

@@ -108,6 +108,15 @@ class EmergencyProvider extends ChangeNotifier {
       } else {
         debugPrint('Could not launch SMS app');
       }
+
+      // Also SMS the 2nd emergency contact if available
+      final phone2 = profile.emergencyContact2Phone;
+      if (phone2.isNotEmpty) {
+        final smsUri2 = Uri.parse('sms:$phone2?body=$message');
+        if (await canLaunchUrl(smsUri2)) {
+          await launchUrl(smsUri2);
+        }
+      }
     } catch (e) {
       debugPrint('SMS error: $e');
       // Don't fail the whole emergency for SMS issues

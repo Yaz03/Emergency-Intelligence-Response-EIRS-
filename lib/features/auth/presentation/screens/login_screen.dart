@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/utils/validators.dart';
+import '../.././../home/presentation/screens/home_screen.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/auth_text_field.dart';
 import 'register_screen.dart';
@@ -38,7 +39,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!mounted) return;
 
-    if (!success && auth.errorMessage != null) {
+    if (success) {
+      // Navigate to home and clear the stack
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(HomeScreen.routeName, (route) => false);
+    } else if (auth.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(auth.errorMessage!),
@@ -106,16 +112,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   // ── Submit ────────────────────────────────────────────
                   ElevatedButton(
                     onPressed: auth.isLoading ? null : _submit,
-                    child: auth.isLoading
-                        ? const SizedBox(
-                            height: 22,
-                            width: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Sign In'),
+                    child:
+                        auth.isLoading
+                            ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Colors.white,
+                              ),
+                            )
+                            : const Text('Sign In'),
                   ),
                   const SizedBox(height: 16),
 
@@ -128,10 +135,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: theme.textTheme.bodyMedium,
                       ),
                       GestureDetector(
-                        onTap: () => Navigator.pushReplacementNamed(
-                          context,
-                          RegisterScreen.routeName,
-                        ),
+                        onTap:
+                            () => Navigator.pushReplacementNamed(
+                              context,
+                              RegisterScreen.routeName,
+                            ),
                         child: Text(
                           'Register',
                           style: theme.textTheme.bodyMedium?.copyWith(
