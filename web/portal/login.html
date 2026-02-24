@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Healthcare Login — MediQR</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -163,85 +162,110 @@
         <a class="back-link" href="javascript:history.back()">← Back to Emergency Page</a>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // ── Supabase Config ──────────────────────────────────────────────────
-        const SUPABASE_URL = 'https://krpmrkxustljymgnwrzq.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtycG1ya3h1c3RsanltZ253cnpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MjIxNDIsImV4cCI6MjA4NzM5ODE0Mn0.SmP5GhPK9u2K-hpMFmIAwR00T9CzFLEY8ROGeC0m69w';
+        (function () {
+            var SUPABASE_URL = 'https://krpmrkxustljymgnwrzq.supabase.co';
+            var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtycG1ya3h1c3RsanltZ253cnpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MjIxNDIsImV4cCI6MjA4NzM5ODE0Mn0.SmP5GhPK9u2K-hpMFmIAwR00T9CzFLEY8ROGeC0m69w';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        // ── DOM ──────────────────────────────────────────────────────────────
-        const $form = document.getElementById('login-form');
-        const $error = document.getElementById('error-msg');
-        const $submitBtn = document.getElementById('submit-btn');
-
-        /** Get URL parameter */
-        function getParam(name) {
-            return new URLSearchParams(window.location.search).get(name);
-        }
-
-        /** Show error message */
-        function showError(msg) {
-            $error.textContent = msg;
-            $error.style.display = 'block';
-        }
-
-        /** Hide error message */
-        function hideError() {
-            $error.style.display = 'none';
-        }
-
-        // ── Check if already logged in ──────────────────────────────────────
-        async function checkSession() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                redirectToDashboard();
-            }
-        }
-
-        /** Redirect to dashboard with incident_id if present */
-        function redirectToDashboard() {
-            const incidentId = getParam('incident_id');
-            const url = incidentId
-                ? `dashboard.html?incident_id=${incidentId}`
-                : 'dashboard.html';
-            window.location.href = url;
-        }
-
-        // ── Login ────────────────────────────────────────────────────────────
-        $form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            hideError();
-
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-
-            if (!email || !password) {
-                showError('Please fill in all fields.');
+            if (!window.supabase || !window.supabase.createClient) {
+                document.getElementById('error-msg').textContent = 'Failed to load. Please refresh the page.';
+                document.getElementById('error-msg').style.display = 'block';
                 return;
             }
 
-            $submitBtn.disabled = true;
-            $submitBtn.textContent = 'Signing in…';
+            var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('Supabase client created');
 
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
+            var $form = document.getElementById('login-form');
+            var $error = document.getElementById('error-msg');
+            var $submitBtn = document.getElementById('submit-btn');
+
+            function getParam(name) {
+                return new URLSearchParams(window.location.search).get(name);
+            }
+
+            function showError(msg) {
+                $error.textContent = msg;
+                $error.style.display = 'block';
+            }
+
+            function hideError() {
+                $error.style.display = 'none';
+            }
+
+            function redirectToDashboard() {
+                var incidentId = getParam('incident_id');
+                var url = incidentId ? 'dashboard.html?incident_id=' + incidentId : 'dashboard.html';
+                window.location.href = url;
+            }
+
+            // Check if already logged in
+            async function checkSession() {
+                var result = await sb.auth.getSession();
+                if (result.data.session) {
+                    // Check if user is a paramedic
+                    var roleCheck = await sb.from('user_roles').select('role').eq('user_id', result.data.session.user.id).single();
+                    if (roleCheck.data && roleCheck.data.role === 'paramedic') {
+                        redirectToDashboard();
+                    } else {
+                        // Not a paramedic, sign them out
+                        await sb.auth.signOut();
+                        showError('Access denied. Only healthcare workers can log in here.');
+                    }
+                }
+            }
+
+            // Login
+            $form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                hideError();
+
+                var email = document.getElementById('email').value.trim();
+                var password = document.getElementById('password').value;
+
+                if (!email || !password) {
+                    showError('Please fill in all fields.');
+                    return;
+                }
+
+                $submitBtn.disabled = true;
+                $submitBtn.textContent = 'Signing in…';
+
+                console.log('Attempting login for:', email);
+
+                var result = await sb.auth.signInWithPassword({ email: email, password: password });
+
+                if (result.error) {
+                    console.error('Login error:', result.error.message);
+                    showError(result.error.message);
+                    $submitBtn.disabled = false;
+                    $submitBtn.textContent = 'Sign In';
+                    return;
+                }
+
+                console.log('Login successful, checking role...');
+
+                // Check if user has paramedic role
+                var roleCheck = await sb.from('user_roles').select('role').eq('user_id', result.data.user.id).single();
+                console.log('Role check:', roleCheck.data, roleCheck.error);
+
+                if (!roleCheck.data || roleCheck.data.role !== 'paramedic') {
+                    // Not a paramedic — sign out and show error
+                    await sb.auth.signOut();
+                    showError('Access denied. Only healthcare workers (paramedics) can log in here. Contact admin to set up your account.');
+                    $submitBtn.disabled = false;
+                    $submitBtn.textContent = 'Sign In';
+                    return;
+                }
+
+                // Success — redirect
+                console.log('Paramedic verified, redirecting to dashboard');
+                redirectToDashboard();
             });
 
-            if (error) {
-                showError(error.message);
-                $submitBtn.disabled = false;
-                $submitBtn.textContent = 'Sign In';
-                return;
-            }
-
-            // Success → redirect to dashboard
-            redirectToDashboard();
-        });
-
-        // Check session on load
-        checkSession();
+            checkSession();
+        })();
     </script>
 </body>
 

@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Incident Dashboard — MediQR</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -20,7 +19,6 @@
             color: #fff;
         }
 
-        /* ── Header ─────────────────────────────────────── */
         .header {
             background: #16213e;
             padding: 16px 24px;
@@ -51,14 +49,12 @@
             cursor: pointer;
         }
 
-        /* ── Container ──────────────────────────────────── */
         .container {
             max-width: 600px;
             margin: 0 auto;
             padding: 24px 16px;
         }
 
-        /* ── Loading ────────────────────────────────────── */
         .loading {
             display: flex;
             flex-direction: column;
@@ -82,7 +78,6 @@
             }
         }
 
-        /* ── Tabs ───────────────────────────────────────── */
         .tabs {
             display: flex;
             gap: 4px;
@@ -109,7 +104,6 @@
             color: #fff;
         }
 
-        /* ── Incident Card ──────────────────────────────── */
         .incident-card {
             background: #16213e;
             border-radius: 14px;
@@ -171,7 +165,6 @@
             border: 1px solid rgba(46, 196, 134, 0.3);
         }
 
-        /* ── Form ───────────────────────────────────────── */
         .form-section {
             background: #16213e;
             border-radius: 14px;
@@ -232,7 +225,6 @@
             background: #16213e;
         }
 
-        /* Severity selector */
         .severity-grid {
             display: flex;
             gap: 8px;
@@ -306,7 +298,6 @@
 
 <body>
 
-    <!-- Header -->
     <div class="header">
         <div>
             <h1>📋 Incident Dashboard</h1>
@@ -315,31 +306,24 @@
         <button class="logout-btn" id="logout-btn">Sign Out</button>
     </div>
 
-    <!-- Loading -->
     <div id="loading" class="loading">
         <div class="spinner"></div>
         <p style="margin-top:12px; color:#888; font-size:14px;">Loading incidents…</p>
     </div>
 
-    <!-- Main Content -->
     <div class="container" id="main-content" style="display:none;">
-
-        <!-- Tabs -->
         <div class="tabs">
             <div class="tab active" id="tab-pending" data-status="pending">⏳ Pending</div>
             <div class="tab" id="tab-completed" data-status="completed">✅ Completed</div>
         </div>
 
-        <!-- Incident List -->
         <div id="incident-list"></div>
 
-        <!-- Empty State -->
         <div id="empty-state" class="empty-state" style="display:none;">
             <div class="icon">📭</div>
             <p>No incidents found</p>
         </div>
 
-        <!-- Completion Form -->
         <div class="form-section" id="form-section">
             <h3>Complete Incident Report</h3>
 
@@ -375,262 +359,218 @@
             </div>
 
             <div class="success-msg" id="success-msg">✅ Incident report completed successfully!</div>
-
             <button class="submit-btn" id="submit-btn">Complete Report</button>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // ── Supabase Config ──────────────────────────────────────────────────
-        const SUPABASE_URL = 'https://krpmrkxustljymgnwrzq.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtycG1ya3h1c3RsanltZ253cnpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MjIxNDIsImV4cCI6MjA4NzM5ODE0Mn0.SmP5GhPK9u2K-hpMFmIAwR00T9CzFLEY8ROGeC0m69w';
+        (function () {
+            var SUPABASE_URL = 'https://krpmrkxustljymgnwrzq.supabase.co';
+            var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtycG1ya3h1c3RsanltZ253cnpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MjIxNDIsImV4cCI6MjA4NzM5ODE0Mn0.SmP5GhPK9u2K-hpMFmIAwR00T9CzFLEY8ROGeC0m69w';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        // ── State ────────────────────────────────────────────────────────────
-        let allIncidents = [];
-        let selectedIncidentId = null;
-        let selectedSeverity = null;
-        let currentFilter = 'pending';
-
-        // ── DOM ──────────────────────────────────────────────────────────────
-        const $loading = document.getElementById('loading');
-        const $main = document.getElementById('main-content');
-        const $list = document.getElementById('incident-list');
-        const $empty = document.getElementById('empty-state');
-        const $form = document.getElementById('form-section');
-        const $success = document.getElementById('success-msg');
-        const $submitBtn = document.getElementById('submit-btn');
-
-        // ── Utility ──────────────────────────────────────────────────────────
-
-        function getParam(name) {
-            return new URLSearchParams(window.location.search).get(name);
-        }
-
-        function formatDate(dateStr) {
-            if (!dateStr) return '—';
-            const d = new Date(dateStr);
-            return d.toLocaleString('en-IN', {
-                day: 'numeric', month: 'short', year: 'numeric',
-                hour: '2-digit', minute: '2-digit',
-            });
-        }
-
-        // ── Auth Check ───────────────────────────────────────────────────────
-
-        async function checkAuth() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                window.location.href = 'login.html';
-                return null;
-            }
-            document.getElementById('user-email').textContent = session.user.email;
-            return session;
-        }
-
-        // ── Logout ───────────────────────────────────────────────────────────
-
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            await supabase.auth.signOut();
-            window.location.href = 'login.html';
-        });
-
-        // ── Fetch Incidents ──────────────────────────────────────────────────
-
-        async function fetchIncidents() {
-            const { data, error } = await supabase
-                .from('incidents')
-                .select('*')
-                .order('scan_time', { ascending: false });
-
-            if (error) {
-                console.error('Failed to fetch incidents:', error.message);
-                return [];
-            }
-
-            return data || [];
-        }
-
-        // ── Render Incidents ─────────────────────────────────────────────────
-
-        function renderIncidents() {
-            const filtered = allIncidents.filter(i => i.status === currentFilter);
-
-            if (filtered.length === 0) {
-                $list.innerHTML = '';
-                $empty.style.display = 'block';
-                $form.classList.remove('visible');
+            if (!window.supabase || !window.supabase.createClient) {
+                document.getElementById('loading').innerHTML = '<p style="color:#e63946">Failed to load. Please refresh.</p>';
                 return;
             }
 
-            $empty.style.display = 'none';
+            var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('Dashboard: Supabase client created');
 
-            $list.innerHTML = filtered.map(incident => `
-        <div class="incident-card ${incident.id === selectedIncidentId ? 'selected' : ''}"
-             data-id="${incident.id}">
-          <div class="row">
-            <span class="label">Scan Time</span>
-            <span class="value">${formatDate(incident.scan_time)}</span>
-          </div>
-          <div class="row">
-            <span class="label">Location</span>
-            <span class="value">
-              ${incident.latitude && incident.longitude
-                    ? `<a href="https://maps.google.com/?q=${incident.latitude},${incident.longitude}" target="_blank" style="color:#0d6efd; text-decoration:none;">
-                    📍 ${Number(incident.latitude).toFixed(4)}, ${Number(incident.longitude).toFixed(4)}
-                  </a>`
-                    : 'GPS unavailable'}
-            </span>
-          </div>
-          <div class="row">
-            <span class="label">Status</span>
-            <span class="status-badge status-${incident.status}">${incident.status}</span>
-          </div>
-          ${incident.incident_type ? `
-          <div class="row">
-            <span class="label">Type</span>
-            <span class="value">${incident.incident_type}</span>
-          </div>` : ''}
-          ${incident.severity ? `
-          <div class="row">
-            <span class="label">Severity</span>
-            <span class="value">${'🔴'.repeat(incident.severity)}${'⚪'.repeat(5 - incident.severity)}</span>
-          </div>` : ''}
-          ${incident.reason ? `
-          <div class="row">
-            <span class="label">Reason</span>
-            <span class="value" style="max-width:70%">${incident.reason}</span>
-          </div>` : ''}
-        </div>
-      `).join('');
+            // State
+            var allIncidents = [];
+            var selectedIncidentId = null;
+            var selectedSeverity = null;
+            var currentFilter = 'pending';
 
-            // Click handlers
-            document.querySelectorAll('.incident-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    const id = card.dataset.id;
-                    const incident = allIncidents.find(i => i.id === id);
-                    if (incident && incident.status === 'pending') {
-                        selectIncident(id);
+            // DOM
+            var $loading = document.getElementById('loading');
+            var $main = document.getElementById('main-content');
+            var $list = document.getElementById('incident-list');
+            var $empty = document.getElementById('empty-state');
+            var $form = document.getElementById('form-section');
+            var $success = document.getElementById('success-msg');
+            var $submitBtn = document.getElementById('submit-btn');
+
+            function getParam(name) {
+                return new URLSearchParams(window.location.search).get(name);
+            }
+
+            function formatDate(dateStr) {
+                if (!dateStr) return '—';
+                var d = new Date(dateStr);
+                return d.toLocaleString('en-IN', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit',
+                });
+            }
+
+            // Auth check
+            async function checkAuth() {
+                var result = await sb.auth.getSession();
+                if (!result.data.session) {
+                    window.location.href = 'login.html';
+                    return null;
+                }
+                document.getElementById('user-email').textContent = result.data.session.user.email;
+                return result.data.session;
+            }
+
+            // Logout
+            document.getElementById('logout-btn').addEventListener('click', async function () {
+                await sb.auth.signOut();
+                window.location.href = 'login.html';
+            });
+
+            // Fetch incidents
+            async function fetchIncidents() {
+                var result = await sb.from('incidents').select('*').order('scan_time', { ascending: false });
+                if (result.error) {
+                    console.error('Failed to fetch incidents:', result.error.message);
+                    return [];
+                }
+                return result.data || [];
+            }
+
+            // Render incidents
+            function renderIncidents() {
+                var filtered = allIncidents.filter(function (i) { return i.status === currentFilter; });
+
+                if (filtered.length === 0) {
+                    $list.innerHTML = '';
+                    $empty.style.display = 'block';
+                    $form.classList.remove('visible');
+                    return;
+                }
+
+                $empty.style.display = 'none';
+
+                $list.innerHTML = filtered.map(function (incident) {
+                    var locationHtml = (incident.latitude && incident.longitude)
+                        ? '<a href="https://maps.google.com/?q=' + incident.latitude + ',' + incident.longitude + '" target="_blank" style="color:#0d6efd; text-decoration:none;">📍 ' + Number(incident.latitude).toFixed(4) + ', ' + Number(incident.longitude).toFixed(4) + '</a>'
+                        : 'GPS unavailable';
+
+                    var extraRows = '';
+                    if (incident.incident_type) {
+                        extraRows += '<div class="row"><span class="label">Type</span><span class="value">' + incident.incident_type + '</span></div>';
                     }
+                    if (incident.severity) {
+                        extraRows += '<div class="row"><span class="label">Severity</span><span class="value">' + '🔴'.repeat(incident.severity) + '⚪'.repeat(5 - incident.severity) + '</span></div>';
+                    }
+                    if (incident.reason) {
+                        extraRows += '<div class="row"><span class="label">Reason</span><span class="value" style="max-width:70%">' + incident.reason + '</span></div>';
+                    }
+
+                    return '<div class="incident-card ' + (incident.id === selectedIncidentId ? 'selected' : '') + '" data-id="' + incident.id + '">' +
+                        '<div class="row"><span class="label">Scan Time</span><span class="value">' + formatDate(incident.scan_time) + '</span></div>' +
+                        '<div class="row"><span class="label">Location</span><span class="value">' + locationHtml + '</span></div>' +
+                        '<div class="row"><span class="label">Status</span><span class="status-badge status-' + incident.status + '">' + incident.status + '</span></div>' +
+                        extraRows +
+                        '</div>';
+                }).join('');
+
+                // Click handlers
+                document.querySelectorAll('.incident-card').forEach(function (card) {
+                    card.addEventListener('click', function () {
+                        var id = card.dataset.id;
+                        var incident = allIncidents.find(function (i) { return i.id === id; });
+                        if (incident && incident.status === 'pending') {
+                            selectIncident(id);
+                        }
+                    });
+                });
+            }
+
+            function selectIncident(id) {
+                selectedIncidentId = id;
+                $form.classList.add('visible');
+                $success.style.display = 'none';
+                document.getElementById('incident-type').value = '';
+                document.getElementById('reason').value = '';
+                selectedSeverity = null;
+                document.querySelectorAll('.severity-btn').forEach(function (b) { b.classList.remove('active'); });
+                renderIncidents();
+                $form.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            // Severity selector
+            document.querySelectorAll('.severity-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    selectedSeverity = parseInt(btn.dataset.severity);
+                    document.querySelectorAll('.severity-btn').forEach(function (b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
                 });
             });
-        }
 
-        /** Select an incident for completion */
-        function selectIncident(id) {
-            selectedIncidentId = id;
-            $form.classList.add('visible');
-            $success.style.display = 'none';
+            // Submit completion
+            $submitBtn.addEventListener('click', async function () {
+                if (!selectedIncidentId) return;
 
-            // Reset form
-            document.getElementById('incident-type').value = '';
-            document.getElementById('reason').value = '';
-            selectedSeverity = null;
-            document.querySelectorAll('.severity-btn').forEach(b => b.classList.remove('active'));
+                var incidentType = document.getElementById('incident-type').value;
+                var reason = document.getElementById('reason').value.trim();
 
-            renderIncidents();
+                if (!incidentType) { alert('Please select an incident type.'); return; }
+                if (!selectedSeverity) { alert('Please select a severity level.'); return; }
 
-            // Scroll to form
-            $form.scrollIntoView({ behavior: 'smooth' });
-        }
+                $submitBtn.disabled = true;
+                $submitBtn.textContent = 'Submitting…';
 
-        // ── Severity Selector ────────────────────────────────────────────────
-
-        document.querySelectorAll('.severity-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                selectedSeverity = parseInt(btn.dataset.severity);
-                document.querySelectorAll('.severity-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            });
-        });
-
-        // ── Submit Completion ────────────────────────────────────────────────
-
-        $submitBtn.addEventListener('click', async () => {
-            if (!selectedIncidentId) return;
-
-            const incidentType = document.getElementById('incident-type').value;
-            const reason = document.getElementById('reason').value.trim();
-
-            if (!incidentType) {
-                alert('Please select an incident type.');
-                return;
-            }
-            if (!selectedSeverity) {
-                alert('Please select a severity level.');
-                return;
-            }
-
-            $submitBtn.disabled = true;
-            $submitBtn.textContent = 'Submitting…';
-
-            const { error } = await supabase
-                .from('incidents')
-                .update({
+                var result = await sb.from('incidents').update({
                     incident_type: incidentType,
                     severity: selectedSeverity,
                     reason: reason || null,
                     status: 'completed',
-                })
-                .eq('id', selectedIncidentId);
+                }).eq('id', selectedIncidentId);
 
-            if (error) {
-                alert('Failed to update: ' + error.message);
-                $submitBtn.disabled = false;
-                $submitBtn.textContent = 'Complete Report';
-                return;
-            }
+                if (result.error) {
+                    alert('Failed to update: ' + result.error.message);
+                    $submitBtn.disabled = false;
+                    $submitBtn.textContent = 'Complete Report';
+                    return;
+                }
 
-            // Success
-            $success.style.display = 'block';
-            $submitBtn.textContent = '✅ Completed';
+                $success.style.display = 'block';
+                $submitBtn.textContent = '✅ Completed';
 
-            // Refresh list after delay
-            setTimeout(async () => {
-                allIncidents = await fetchIncidents();
-                selectedIncidentId = null;
-                $form.classList.remove('visible');
-                $submitBtn.disabled = false;
-                $submitBtn.textContent = 'Complete Report';
-                renderIncidents();
-            }, 1500);
-        });
-
-        // ── Tabs ─────────────────────────────────────────────────────────────
-
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                currentFilter = tab.dataset.status;
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                selectedIncidentId = null;
-                $form.classList.remove('visible');
-                renderIncidents();
+                setTimeout(async function () {
+                    allIncidents = await fetchIncidents();
+                    selectedIncidentId = null;
+                    $form.classList.remove('visible');
+                    $submitBtn.disabled = false;
+                    $submitBtn.textContent = 'Complete Report';
+                    renderIncidents();
+                }, 1500);
             });
-        });
 
-        // ── Init ─────────────────────────────────────────────────────────────
+            // Tabs
+            document.querySelectorAll('.tab').forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    currentFilter = tab.dataset.status;
+                    document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
+                    tab.classList.add('active');
+                    selectedIncidentId = null;
+                    $form.classList.remove('visible');
+                    renderIncidents();
+                });
+            });
 
-        async function init() {
-            const session = await checkAuth();
-            if (!session) return;
+            // Init
+            async function init() {
+                var session = await checkAuth();
+                if (!session) return;
 
-            allIncidents = await fetchIncidents();
+                allIncidents = await fetchIncidents();
+                $loading.style.display = 'none';
+                $main.style.display = 'block';
 
-            $loading.style.display = 'none';
-            $main.style.display = 'block';
+                var incidentId = getParam('incident_id');
+                if (incidentId) { selectIncident(incidentId); }
 
-            // Auto-select incident if coming from emergency page
-            const incidentId = getParam('incident_id');
-            if (incidentId) {
-                selectIncident(incidentId);
+                renderIncidents();
             }
 
-            renderIncidents();
-        }
-
-        init();
+            init();
+        })();
     </script>
 </body>
 
