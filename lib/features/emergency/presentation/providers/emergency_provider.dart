@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:url_launcher/url_launcher.dart';
@@ -17,6 +18,7 @@ class EmergencyProvider extends ChangeNotifier {
   String? _errorMessage;
   EmergencyIncident? _lastIncident;
   bool _smsSent = false;
+  String? _locationName;
 
   EmergencyProvider({
     required EmergencyRepository repository,
@@ -29,6 +31,7 @@ class EmergencyProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   EmergencyIncident? get lastIncident => _lastIncident;
   bool get smsSent => _smsSent;
+  String? get locationName => _locationName;
   bool get isBusy =>
       _status == EmergencyStatus.locating || _status == EmergencyStatus.sending;
 
@@ -36,6 +39,7 @@ class EmergencyProvider extends ChangeNotifier {
   Future<bool> triggerEmergency({String? notes}) async {
     _errorMessage = null;
     _smsSent = false;
+    _locationName = null;
 
     // 1. Get GPS location
     _status = EmergencyStatus.locating;
@@ -48,6 +52,12 @@ class EmergencyProvider extends ChangeNotifier {
       _setError('$e');
       return false;
     }
+
+    // 1b. Reverse geocode to get location name
+    _locationName = await _reverseGeocode(
+      position.latitude,
+      position.longitude,
+    );
 
     // 2. Send incident to backend
     _status = EmergencyStatus.sending;
@@ -78,7 +88,28 @@ class EmergencyProvider extends ChangeNotifier {
     }
   }
 
-  /// Send SMS to the emergency contact saved in the user's profile.
+  /// Reverse geocode coordinates to a readable location name.
+  Future<String?> _reverseGeocode(double lat, double lng) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(lat, lng);
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+        final parts = <String>[
+          if (p.subLocality != null && p.subLocality!.isNotEmpty)
+            p.subLocality!,
+          if (p.locality != null && p.locality!.isNotEmpty) p.locality!,
+          if (p.administrativeArea != null && p.administrativeArea!.isNotEmpty)
+            p.administrativeArea!,
+        ];
+        return parts.isNotEmpty ? parts.join(', ') : null;
+      }
+    } catch (e) {
+      debugPrint('Reverse geocoding failed: $e');
+    }
+    return null;
+  }
+
+  /// Send SMS to the emergency contacts saved in the user's profile.
   Future<void> _sendEmergencySms(double lat, double lng) async {
     try {
       final profile = await _profileRepository.getProfile();
@@ -92,11 +123,12 @@ class EmergencyProvider extends ChangeNotifier {
       final userName =
           profile.fullName.isNotEmpty ? profile.fullName : 'A MediQR user';
       final mapsLink = 'https://maps.google.com/?q=$lat,$lng';
+      final locationStr = _locationName != null ? ' ($_locationName)' : '';
 
       final message = Uri.encodeComponent(
         '🚨 EMERGENCY ALERT!\n\n'
         '$userName has triggered an emergency SOS.\n\n'
-        '📍 Location: $mapsLink\n\n'
+        '📍 Location$locationStr: $mapsLink\n\n'
         'Please respond immediately.\n'
         '— Sent via Smart Medical ID',
       );
@@ -128,6 +160,7 @@ class EmergencyProvider extends ChangeNotifier {
     _errorMessage = null;
     _lastIncident = null;
     _smsSent = false;
+    _locationName = null;
     notifyListeners();
   }
 

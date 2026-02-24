@@ -40,6 +40,7 @@ dependencies:
   printing: ^5.14.2
   pdf: ^3.11.3
   url_launcher: ^6.3.2
+  geocoding: ^4.0.0
 
 dev_dependencies:
   flutter_test:
