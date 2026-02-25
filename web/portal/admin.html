@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — MediQR</title>
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+
+<body>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <p style="color:#888;font-size:14px">Loading dashboard…</p>
+    </div>
+
+    <!-- Mobile Toggle -->
+    <button class="mobile-toggle" id="mobile-toggle">☰</button>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>🏥 MediQR Admin</h1>
+            <p>Management Dashboard</p>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a class="nav-item active" data-section="overview">
+                <span class="icon">📊</span> Overview
+            </a>
+            <a class="nav-item" data-section="incidents">
+                <span class="icon">📋</span> Incidents
+            </a>
+            <a class="nav-item" data-section="analytics">
+                <span class="icon">📈</span> Analytics
+            </a>
+            <a class="nav-item" data-section="map">
+                <span class="icon">🗺️</span> Incident Map
+            </a>
+            <a class="nav-item" data-section="users">
+                <span class="icon">👥</span> User Management
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info" id="user-email">admin@mediqr.com</div>
+            <button class="logout-btn" id="logout-btn">🚪 Sign Out</button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+
+        <!-- ═══ OVERVIEW ═══ -->
+        <div class="section active" id="section-overview">
+            <h2 class="page-title">Dashboard Overview</h2>
+            <p class="page-subtitle">Real-time statistics and key metrics</p>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon">👤</div>
+                    <div class="kpi-value" id="kpi-patients">0</div>
+                    <div class="kpi-label">Registered Patients</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">🚨</div>
+                    <div class="kpi-value" id="kpi-total">0</div>
+                    <div class="kpi-label">Total Incidents</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">📅</div>
+                    <div class="kpi-value" id="kpi-today">0</div>
+                    <div class="kpi-label">Incidents Today</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">⏳</div>
+                    <div class="kpi-value" id="kpi-pending">0</div>
+                    <div class="kpi-label">Pending</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">✅</div>
+                    <div class="kpi-value" id="kpi-completed">0</div>
+                    <div class="kpi-label">Completed</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">🔥</div>
+                    <div class="kpi-value" id="kpi-severity">—</div>
+                    <div class="kpi-label">Avg Severity</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">⏱️</div>
+                    <div class="kpi-value" id="kpi-response">—</div>
+                    <div class="kpi-label">Avg Response</div>
+                </div>
+            </div>
+
+            <!-- Quick Charts in Overview -->
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <h3>📈 Incidents — Last 7 Days</h3>
+                    <canvas id="chart-line"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>🎯 Severity Distribution</h3>
+                    <canvas id="chart-pie"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ INCIDENTS TABLE ═══ -->
+        <div class="section" id="section-incidents">
+            <h2 class="page-title">Incident Reports</h2>
+            <p class="page-subtitle">Search, filter, and review all emergency incidents</p>
+
+            <div class="table-container">
+                <div class="table-filters">
+                    <input type="text" class="filter-input" id="filter-search" placeholder="🔍 Search patient name…">
+                    <input type="date" class="filter-input" id="filter-date-from" style="min-width:140px">
+                    <input type="date" class="filter-input" id="filter-date-to" style="min-width:140px">
+                    <select class="filter-select" id="filter-severity">
+                        <option value="">All Severities</option>
+                        <option value="1">Severity 1</option>
+                        <option value="2">Severity 2</option>
+                        <option value="3">Severity 3</option>
+                        <option value="4">Severity 4</option>
+                        <option value="5">Severity 5</option>
+                    </select>
+                    <select class="filter-select" id="filter-status">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+
+                <div style="overflow-x:auto">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Patient</th>
+                                <th>City</th>
+                                <th>Date</th>
+                                <th>Severity</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incident-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ ANALYTICS ═══ -->
+        <div class="section" id="section-analytics">
+            <h2 class="page-title">Analytics</h2>
+            <p class="page-subtitle">Visual breakdown of incident data</p>
+
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <h3>📊 Incidents by Type</h3>
+                    <canvas id="chart-type"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>🏙️ Incidents by City</h3>
+                    <canvas id="chart-city"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ MAP ═══ -->
+        <div class="section" id="section-map">
+            <h2 class="page-title">Incident Map</h2>
+            <p class="page-subtitle">Geographic distribution of all emergency incidents</p>
+
+            <div class="map-container">
+                <div class="map-toolbar">
+                    <label>Filter by severity:</label>
+                    <select class="filter-select" id="map-severity">
+                        <option value="">All</option>
+                        <option value="1">1 — Low</option>
+                        <option value="2">2</option>
+                        <option value="3">3 — Medium</option>
+                        <option value="4">4</option>
+                        <option value="5">5 — Critical</option>
+                    </select>
+                </div>
+                <div id="map"></div>
+            </div>
+        </div>
+
+        <!-- ═══ USER MANAGEMENT ═══ -->
+        <div class="section" id="section-users">
+            <h2 class="page-title">User Management</h2>
+            <p class="page-subtitle">View and manage user roles</p>
+
+            <div id="user-list"></div>
+        </div>
+
+    </main>
+
+    <!-- CDNs (loaded at bottom to avoid race conditions) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="admin.js"></script>
+</body>
+
+</html>
