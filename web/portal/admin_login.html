@@ -178,8 +178,8 @@
             (async function () {
                 var result = await sb.auth.getSession();
                 if (result.data.session) {
-                    var roleResult = await sb.from('user_roles').select('role').eq('user_id', result.data.session.user.id).single();
-                    if (roleResult.data && roleResult.data.role === 'admin') {
+                    var roleResult = await sb.from('admin_users').select('id').eq('user_id', result.data.session.user.id).single();
+                    if (roleResult.data) {
                         window.location.href = 'admin.html';
                         return;
                     }
@@ -226,9 +226,9 @@
 
                     // Check role
                     var userId = result.data.user.id;
-                    var roleResult = await sb.from('user_roles').select('role').eq('user_id', userId).single();
+                    var roleResult = await sb.from('admin_users').select('id').eq('user_id', userId).single();
 
-                    if (!roleResult.data || roleResult.data.role !== 'admin') {
+                    if (!roleResult.data) {
                         showError('Access denied. Admin role required.');
                         await sb.auth.signOut();
                         $btn.disabled = false;

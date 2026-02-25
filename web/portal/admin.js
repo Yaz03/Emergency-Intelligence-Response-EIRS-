@@ -29,11 +29,11 @@ async function initApp() {
         return;
     }
 
-    // Role check
+    // Admin check
     const userId = sessionData.session.user.id;
-    const { data: roleData } = await sb.from('user_roles').select('role').eq('user_id', userId).single();
+    const { data: adminData } = await sb.from('admin_users').select('id').eq('user_id', userId).single();
 
-    if (!roleData || roleData.role !== 'admin') {
+    if (!adminData) {
         alert('Access denied. Admin role required.');
         await sb.auth.signOut();
         window.location.href = 'admin_login.html';
