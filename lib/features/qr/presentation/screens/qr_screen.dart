@@ -63,7 +63,7 @@ class _QrScreenState extends State<QrScreen> {
         files: [
           XFile.fromData(bytes, mimeType: 'image/png', name: 'medical_qr.png'),
         ],
-        text: 'My Smart Medical ID QR Code',
+        text: 'My EIRS QR Code',
       ),
     );
   }
@@ -91,7 +91,7 @@ class _QrScreenState extends State<QrScreen> {
               mainAxisAlignment: pw.MainAxisAlignment.center,
               children: [
                 pw.Text(
-                  'Smart Medical ID',
+                  'EIRS',
                   style: pw.TextStyle(
                     fontSize: 28,
                     fontWeight: pw.FontWeight.bold,

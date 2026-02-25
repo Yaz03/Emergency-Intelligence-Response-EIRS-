@@ -17,7 +17,7 @@ class MediQRApp extends StatelessWidget {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
         return MaterialApp(
-          title: 'Smart Medical ID',
+          title: 'EIRS',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,

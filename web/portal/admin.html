@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard — MediQR</title>
+    <title>EIRS Admin Dashboard</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -26,8 +26,8 @@
     <!-- ══════════ SIDEBAR ══════════ -->
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h1>🏥 MediQR Admin</h1>
-            <p>Intelligence Dashboard</p>
+            <h1>🏥 EIRS</h1>
+            <p>Emergency Intelligence & Response</p>
         </div>
 
         <nav class="sidebar-nav">
@@ -101,7 +101,7 @@
                 <div class="kpi-card">
                     <div class="kpi-icon">⏱️</div>
                     <div class="kpi-value" id="kpi-response">—</div>
-                    <div class="kpi-label">Avg Response</div>
+                    <div class="kpi-label">Avg Handling Time</div>
                 </div>
             </div>
 
@@ -162,18 +162,18 @@
                     <canvas id="chart-growth"></canvas>
                 </div>
 
-                <!-- Response Time -->
+                <!-- Handling Time -->
                 <div class="card">
-                    <h3>⏱️ Response Time Analytics</h3>
+                    <h3>⏱️ Handling Time Analytics</h3>
                     <div class="grid-3" style="margin-bottom:16px">
                         <div class="stat-card">
-                            <div class="stat-label">🏆 Fastest City</div>
+                            <div class="stat-label">🏆 Fastest Handling</div>
                             <div class="stat-city" id="resp-fastest-city">—</div>
                             <div class="stat-value" id="resp-fastest-val" style="font-size:20px;color:var(--green)">—
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">🐢 Slowest City</div>
+                            <div class="stat-label">🐢 Slowest Handling</div>
                             <div class="stat-city" id="resp-slowest-city">—</div>
                             <div class="stat-value" id="resp-slowest-val" style="font-size:20px;color:var(--red)">—
                             </div>

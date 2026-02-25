@@ -88,7 +88,7 @@ class _DashboardPageState extends State<_DashboardPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Smart Medical ID'),
+        title: const Text('EIRS'),
         actions: [
           // Avatar / Account button
           GestureDetector(

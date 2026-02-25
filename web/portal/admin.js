@@ -1,6 +1,6 @@
 // ============================================================
 // MediQR Admin Dashboard v2 — JavaScript
-// Full analytics: Risk Score, Peak Hours, Growth, Response Time,
+// Full analytics: Risk Score, Peak Hours, Growth, Handling Time,
 // Map (clustering + heatmap), Incident Table, CSV Export
 // ============================================================
 
@@ -152,7 +152,7 @@ function renderKPIs() {
     const sevs = allIncidents.filter(i => i.severity).map(i => i.severity);
     const avgSev = sevs.length ? (sevs.reduce((a, b) => a + b, 0) / sevs.length).toFixed(1) : '—';
 
-    // Avg response time
+    // Avg handling time
     const responseTimes = allIncidents
         .filter(i => i.completed_time && i.scan_time)
         .map(i => (new Date(i.completed_time) - new Date(i.scan_time)) / 60000); // minutes
@@ -316,11 +316,11 @@ function renderGrowthTrend() {
 }
 
 // ═════════════════════════════════════════════════════════════
-// 5️⃣ RESPONSE TIME ANALYTICS
+// 5️⃣ HANDLING TIME ANALYTICS
 // ═════════════════════════════════════════════════════════════
 
 async function renderResponseTime() {
-    const completed = allIncidents.filter(i => i.completed_time && i.scan_time);
+    const completed = allIncidents.filter(i => i.status === 'completed' && i.completed_time && i.scan_time);
     if (completed.length === 0) {
         document.getElementById('resp-fastest-city').textContent = '—';
         document.getElementById('resp-fastest-val').textContent = 'No data';
@@ -380,7 +380,7 @@ async function renderResponseTime() {
             responsive: true,
             plugins: { legend: { display: false } },
             scales: {
-                y: { beginAtZero: true, title: { display: true, text: 'Minutes', color: '#9ca3af' }, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                y: { beginAtZero: true, title: { display: true, text: 'Minutes (Handling Time)', color: '#9ca3af' }, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(0,0,0,0.04)' } },
                 x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } }
             }
         }

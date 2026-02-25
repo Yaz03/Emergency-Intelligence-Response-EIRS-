@@ -130,7 +130,7 @@ class EmergencyProvider extends ChangeNotifier {
         '$userName has triggered an emergency SOS.\n\n'
         '📍 Location$locationStr: $mapsLink\n\n'
         'Please respond immediately.\n'
-        '— Sent via Smart Medical ID',
+        '— Sent via EIRS',
       );
 
       final smsUri = Uri.parse('sms:$phone?body=$message');

@@ -1,7 +1,7 @@
 class AppConstants {
   AppConstants._();
 
-  static const String appName = 'Smart Medical ID';
+  static const String appName = 'EIRS';
 
   // ── Secure Storage Keys ───────────────────────────────────────────────
   static const String accessTokenKey = 'access_token';
