@@ -5,8 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard — MediQR</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 </head>
 
 <body>
@@ -14,25 +17,22 @@
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loading-overlay">
         <div class="spinner"></div>
-        <p style="color:#888;font-size:14px">Loading dashboard…</p>
+        <p style="color:var(--text-muted);font-size:14px">Loading dashboard…</p>
     </div>
 
     <!-- Mobile Toggle -->
     <button class="mobile-toggle" id="mobile-toggle">☰</button>
 
-    <!-- Sidebar -->
+    <!-- ══════════ SIDEBAR ══════════ -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <h1>🏥 MediQR Admin</h1>
-            <p>Management Dashboard</p>
+            <p>Intelligence Dashboard</p>
         </div>
 
         <nav class="sidebar-nav">
             <a class="nav-item active" data-section="overview">
                 <span class="icon">📊</span> Overview
-            </a>
-            <a class="nav-item" data-section="incidents">
-                <span class="icon">📋</span> Incidents
             </a>
             <a class="nav-item" data-section="analytics">
                 <span class="icon">📈</span> Analytics
@@ -40,8 +40,11 @@
             <a class="nav-item" data-section="map">
                 <span class="icon">🗺️</span> Incident Map
             </a>
+            <a class="nav-item" data-section="incidents">
+                <span class="icon">📋</span> Incidents
+            </a>
             <a class="nav-item" data-section="users">
-                <span class="icon">👥</span> User Management
+                <span class="icon">👥</span> Users
             </a>
         </nav>
 
@@ -51,19 +54,24 @@
         </div>
     </aside>
 
-    <!-- Main Content -->
+    <!-- ══════════ MAIN ══════════ -->
     <main class="main">
 
-        <!-- ═══ OVERVIEW ═══ -->
+        <!-- ═══════════════════════════════════════════════
+         SECTION: OVERVIEW
+         ═══════════════════════════════════════════════ -->
         <div class="section active" id="section-overview">
-            <h2 class="page-title">Dashboard Overview</h2>
-            <p class="page-subtitle">Real-time statistics and key metrics</p>
+            <div class="page-header">
+                <h2 class="page-title">Dashboard Overview</h2>
+                <p class="page-subtitle">Real-time statistics, risk analysis, and key metrics</p>
+            </div>
 
+            <!-- KPI Cards -->
             <div class="kpi-grid">
                 <div class="kpi-card">
                     <div class="kpi-icon">👤</div>
                     <div class="kpi-value" id="kpi-patients">0</div>
-                    <div class="kpi-label">Registered Patients</div>
+                    <div class="kpi-label">Patients</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-icon">🚨</div>
@@ -73,7 +81,7 @@
                 <div class="kpi-card">
                     <div class="kpi-icon">📅</div>
                     <div class="kpi-value" id="kpi-today">0</div>
-                    <div class="kpi-label">Incidents Today</div>
+                    <div class="kpi-label">Today</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-icon">⏳</div>
@@ -97,44 +105,138 @@
                 </div>
             </div>
 
-            <!-- Quick Charts in Overview -->
-            <div class="chart-grid">
-                <div class="chart-card">
-                    <h3>📈 Incidents — Last 7 Days</h3>
-                    <canvas id="chart-line"></canvas>
-                </div>
-                <div class="chart-card">
-                    <h3>🎯 Severity Distribution</h3>
-                    <canvas id="chart-pie"></canvas>
+            <!-- Risk Score Table -->
+            <div class="card">
+                <h3>🎯 City Risk Scores</h3>
+                <div style="overflow-x:auto">
+                    <table class="risk-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>City</th>
+                                <th>Incidents</th>
+                                <th>Avg Severity</th>
+                                <th>7-Day Growth</th>
+                                <th>Risk Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="risk-tbody"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <!-- ═══ INCIDENTS TABLE ═══ -->
+        <!-- ═══════════════════════════════════════════════
+         SECTION: ANALYTICS
+         ═══════════════════════════════════════════════ -->
+        <div class="section" id="section-analytics">
+            <div class="page-header">
+                <h2 class="page-title">Analytics</h2>
+                <p class="page-subtitle">Peak hours, growth trends, and response time intelligence</p>
+            </div>
+
+            <!-- Peak Hours -->
+            <div class="card">
+                <h3>🕐 Peak Hour Analysis</h3>
+                <canvas id="chart-peak"></canvas>
+            </div>
+
+            <!-- Growth Trend -->
+            <div class="grid-2">
+                <div class="card">
+                    <h3>📈 7-Day Growth Trend</h3>
+                    <div class="grid-3" style="margin-bottom:16px">
+                        <div class="stat-card">
+                            <div class="stat-label">Last 7 Days</div>
+                            <div class="stat-value" id="growth-last7">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Previous 7 Days</div>
+                            <div class="stat-value" id="growth-prev7">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Growth</div>
+                            <div id="growth-pct">—</div>
+                        </div>
+                    </div>
+                    <canvas id="chart-growth"></canvas>
+                </div>
+
+                <!-- Response Time -->
+                <div class="card">
+                    <h3>⏱️ Response Time Analytics</h3>
+                    <div class="grid-3" style="margin-bottom:16px">
+                        <div class="stat-card">
+                            <div class="stat-label">🏆 Fastest City</div>
+                            <div class="stat-city" id="resp-fastest-city">—</div>
+                            <div class="stat-value" id="resp-fastest-val" style="font-size:20px;color:var(--green)">—
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">🐢 Slowest City</div>
+                            <div class="stat-city" id="resp-slowest-city">—</div>
+                            <div class="stat-value" id="resp-slowest-val" style="font-size:20px;color:var(--red)">—
+                            </div>
+                        </div>
+                    </div>
+                    <canvas id="chart-response"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════
+         SECTION: MAP
+         ═══════════════════════════════════════════════ -->
+        <div class="section" id="section-map">
+            <div class="page-header">
+                <h2 class="page-title">Incident Map</h2>
+                <p class="page-subtitle">Geographic intelligence with clustering and heatmap</p>
+            </div>
+
+            <div class="map-wrap">
+                <div class="map-toolbar">
+                    <label>View Mode:</label>
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" id="btn-markers">📍 Markers</button>
+                        <button class="toggle-btn" id="btn-heatmap">🔥 Heatmap</button>
+                    </div>
+                </div>
+                <div id="map"></div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════
+         SECTION: INCIDENTS TABLE
+         ═══════════════════════════════════════════════ -->
         <div class="section" id="section-incidents">
-            <h2 class="page-title">Incident Reports</h2>
-            <p class="page-subtitle">Search, filter, and review all emergency incidents</p>
+            <div class="page-header">
+                <h2 class="page-title">Incident Reports</h2>
+                <p class="page-subtitle">Search, filter, and export emergency incidents</p>
+            </div>
 
             <div class="table-container">
-                <div class="table-filters">
-                    <input type="text" class="filter-input" id="filter-search" placeholder="🔍 Search patient name…">
+                <div class="table-toolbar">
+                    <input type="text" class="filter-input" id="filter-search" placeholder="🔍 Search name…">
+                    <input type="text" class="filter-input" id="filter-city" placeholder="🏙️ Filter city…"
+                        style="min-width:140px">
                     <input type="date" class="filter-input" id="filter-date-from" style="min-width:140px">
                     <input type="date" class="filter-input" id="filter-date-to" style="min-width:140px">
                     <select class="filter-select" id="filter-severity">
-                        <option value="">All Severities</option>
-                        <option value="1">Severity 1</option>
-                        <option value="2">Severity 2</option>
-                        <option value="3">Severity 3</option>
-                        <option value="4">Severity 4</option>
-                        <option value="5">Severity 5</option>
+                        <option value="">All Severity</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
                     </select>
                     <select class="filter-select" id="filter-status">
                         <option value="">All Status</option>
                         <option value="pending">Pending</option>
                         <option value="completed">Completed</option>
                     </select>
+                    <span id="table-count" style="font-size:12px;color:var(--text-muted);margin-left:auto"></span>
+                    <button class="btn-export" onclick="exportCSV()">📥 Export CSV</button>
                 </div>
-
                 <div style="overflow-x:auto">
                     <table>
                         <thead>
@@ -154,71 +256,40 @@
             </div>
         </div>
 
-        <!-- ═══ ANALYTICS ═══ -->
-        <div class="section" id="section-analytics">
-            <h2 class="page-title">Analytics</h2>
-            <p class="page-subtitle">Visual breakdown of incident data</p>
-
-            <div class="chart-grid">
-                <div class="chart-card">
-                    <h3>📊 Incidents by Type</h3>
-                    <canvas id="chart-type"></canvas>
-                </div>
-                <div class="chart-card">
-                    <h3>🏙️ Incidents by City</h3>
-                    <canvas id="chart-city"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- ═══ MAP ═══ -->
-        <div class="section" id="section-map">
-            <h2 class="page-title">Incident Map</h2>
-            <p class="page-subtitle">Geographic distribution of all emergency incidents</p>
-
-            <div class="map-container">
-                <div class="map-toolbar">
-                    <label>Filter by severity:</label>
-                    <select class="filter-select" id="map-severity">
-                        <option value="">All</option>
-                        <option value="1">1 — Low</option>
-                        <option value="2">2</option>
-                        <option value="3">3 — Medium</option>
-                        <option value="4">4</option>
-                        <option value="5">5 — Critical</option>
-                    </select>
-                </div>
-                <div id="map"></div>
-            </div>
-        </div>
-
-        <!-- ═══ USER MANAGEMENT ═══ -->
+        <!-- ═══════════════════════════════════════════════
+         SECTION: USER MANAGEMENT
+         ═══════════════════════════════════════════════ -->
         <div class="section" id="section-users">
-            <h2 class="page-title">User Management</h2>
-            <p class="page-subtitle">View and manage user roles</p>
+            <div class="page-header">
+                <h2 class="page-title">User Management</h2>
+                <p class="page-subtitle">Add users and manage roles</p>
+            </div>
 
-            <!-- Add User Form -->
-            <div
-                style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px">
-                <h3 style="font-size:15px;font-weight:600;color:#6366f1;margin-bottom:16px">➕ Add New User</h3>
+            <!-- Add User -->
+            <div class="card">
+                <h3>➕ Add New User</h3>
                 <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
                     <div style="flex:1;min-width:160px">
-                        <label style="display:block;font-size:12px;color:#888;margin-bottom:4px">Email</label>
+                        <label
+                            style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px">Email</label>
                         <input type="email" id="new-user-email" class="filter-input" placeholder="user@example.com"
                             style="width:100%">
                     </div>
                     <div style="flex:1;min-width:160px">
-                        <label style="display:block;font-size:12px;color:#888;margin-bottom:4px">Password</label>
+                        <label
+                            style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px">Password</label>
                         <input type="password" id="new-user-password" class="filter-input"
                             placeholder="Min 6 characters" style="width:100%">
                     </div>
                     <div style="flex:1;min-width:140px">
-                        <label style="display:block;font-size:12px;color:#888;margin-bottom:4px">Full Name</label>
+                        <label style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px">Full
+                            Name</label>
                         <input type="text" id="new-user-name" class="filter-input" placeholder="John Doe"
                             style="width:100%">
                     </div>
                     <div style="min-width:130px">
-                        <label style="display:block;font-size:12px;color:#888;margin-bottom:4px">Role</label>
+                        <label
+                            style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px">Role</label>
                         <select id="new-user-role" class="filter-select" style="width:100%">
                             <option value="patient">Patient</option>
                             <option value="paramedic">Paramedic</option>
@@ -226,7 +297,7 @@
                         </select>
                     </div>
                     <button id="add-user-btn" onclick="addNewUser()"
-                        style="padding:10px 20px;background:linear-gradient(135deg,#6366f1,#a855f7);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">Add
+                        style="padding:9px 18px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Add
                         User</button>
                 </div>
                 <div id="add-user-msg" style="margin-top:10px;font-size:13px;display:none"></div>
@@ -237,10 +308,12 @@
 
     </main>
 
-    <!-- CDNs (loaded at bottom to avoid race conditions) -->
+    <!-- CDNs -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <script src="admin.js"></script>
 </body>
 
