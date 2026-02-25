@@ -25,7 +25,7 @@ async function initApp() {
     // Auth check
     const { data: sessionData } = await sb.auth.getSession();
     if (!sessionData.session) {
-        window.location.href = 'login.html';
+        window.location.href = 'admin_login.html';
         return;
     }
 
@@ -36,7 +36,7 @@ async function initApp() {
     if (!roleData || roleData.role !== 'admin') {
         alert('Access denied. Admin role required.');
         await sb.auth.signOut();
-        window.location.href = 'login.html';
+        window.location.href = 'admin_login.html';
         return;
     }
 
@@ -136,7 +136,7 @@ function setupNav() {
 function setupLogout() {
     document.getElementById('logout-btn').addEventListener('click', async () => {
         await sb.auth.signOut();
-        window.location.href = 'login.html';
+        window.location.href = 'admin_login.html';
     });
 }
 
