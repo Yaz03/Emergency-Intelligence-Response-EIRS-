@@ -508,6 +508,92 @@ async function changeRole(userId, newRole) {
     renderUsers();
 }
 
+// ── Add New User ─────────────────────────────────────────────
+
+async function addNewUser() {
+    const email = document.getElementById('new-user-email').value.trim();
+    const password = document.getElementById('new-user-password').value;
+    const name = document.getElementById('new-user-name').value.trim();
+    const role = document.getElementById('new-user-role').value;
+    const $msg = document.getElementById('add-user-msg');
+    const $btn = document.getElementById('add-user-btn');
+
+    if (!email || !password || !name) {
+        $msg.textContent = '⚠️ Please fill in all fields.';
+        $msg.style.color = '#fbbf24';
+        $msg.style.display = 'block';
+        return;
+    }
+
+    if (password.length < 6) {
+        $msg.textContent = '⚠️ Password must be at least 6 characters.';
+        $msg.style.color = '#fbbf24';
+        $msg.style.display = 'block';
+        return;
+    }
+
+    $btn.disabled = true;
+    $btn.textContent = 'Creating…';
+    $msg.style.display = 'none';
+
+    try {
+        // Save current admin session
+        const { data: currentSession } = await sb.auth.getSession();
+        const adminEmail = currentSession.session.user.email;
+
+        // Create the new user via signUp
+        const { data: signUpData, error: signUpError } = await sb.auth.signUp({
+            email: email,
+            password: password,
+            options: { data: { full_name: name } }
+        });
+
+        if (signUpError) {
+            $msg.textContent = '❌ ' + signUpError.message;
+            $msg.style.color = '#e63946';
+            $msg.style.display = 'block';
+            $btn.disabled = false;
+            $btn.textContent = 'Add User';
+            return;
+        }
+
+        const newUserId = signUpData.user?.id;
+
+        // Update the role if not patient (patient is auto-assigned by trigger)
+        if (newUserId && role !== 'patient') {
+            // Wait a moment for the trigger to create the default role
+            await new Promise(r => setTimeout(r, 1000));
+            await sb.from('user_roles').update({ role: role }).eq('user_id', newUserId);
+        }
+
+        // Re-authenticate as admin (signUp may have changed the session)
+        // We can't know the admin password, so we'll use the existing refresh token
+        await sb.auth.refreshSession();
+
+        // Success
+        $msg.innerHTML = '✅ User <b>' + email + '</b> created as <b>' + role + '</b>!';
+        $msg.style.color = '#2ec486';
+        $msg.style.display = 'block';
+
+        // Clear form
+        document.getElementById('new-user-email').value = '';
+        document.getElementById('new-user-password').value = '';
+        document.getElementById('new-user-name').value = '';
+
+        // Refresh user list
+        await loadUsers();
+        renderUsers();
+
+    } catch (err) {
+        $msg.textContent = '❌ Error: ' + err.message;
+        $msg.style.color = '#e63946';
+        $msg.style.display = 'block';
+    }
+
+    $btn.disabled = false;
+    $btn.textContent = 'Add User';
+}
+
 // ── Start ────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', initApp);
