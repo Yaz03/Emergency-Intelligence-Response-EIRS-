@@ -566,6 +566,15 @@ async function addNewUser() {
             await sb.from('user_roles').update({ role: role }).eq('user_id', newUserId);
         }
 
+        // If admin, also add to admin_users table
+        if (newUserId && role === 'admin') {
+            await sb.from('admin_users').upsert({
+                user_id: newUserId,
+                name: name,
+                email: email,
+            }, { onConflict: 'user_id' });
+        }
+
         // Re-authenticate as admin (signUp may have changed the session)
         // We can't know the admin password, so we'll use the existing refresh token
         await sb.auth.refreshSession();
