@@ -484,6 +484,7 @@
           longitude = pos.coords.longitude;
         } catch (e) {
           console.warn('Geolocation not available:', e.message);
+          alert('Location access is highly recommended for emergency responders. Please turn on Location Services in your device settings or allow permission in your browser.');
         }
 
         var result = await sb.from('incidents').insert({
@@ -504,7 +505,7 @@
         if (latitude && longitude) {
           $incidentStatus.textContent = '✅ Incident recorded • ' + latitude.toFixed(4) + ', ' + longitude.toFixed(4);
         } else {
-          $incidentStatus.textContent = '✅ Incident recorded (GPS unavailable)';
+          $incidentStatus.innerHTML = '✅ Incident recorded (GPS unavailable)<br><button onclick="window.location.reload()" style="margin-top:8px; padding:6px 12px; border-radius:6px; background:#fff; border:none; cursor:pointer; color:#000;">Retry Location</button>';
         }
 
         $completeBtn.href = 'login.html?incident_id=' + result.data.id;

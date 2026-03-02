@@ -176,10 +176,7 @@ class EmergencyProvider extends ChangeNotifier {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       await Geolocator.openLocationSettings();
-      serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw 'Location services are disabled. Please enable GPS in Settings and try again.';
-      }
+      throw 'Location is turned off. Please enable GPS in your device settings and press SOS again.';
     }
 
     LocationPermission permission = await Geolocator.checkPermission();

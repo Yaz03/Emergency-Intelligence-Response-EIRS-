@@ -1,11 +1,14 @@
 import 'dart:math';
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 class QrProvider extends ChangeNotifier {
   String? _qrData;
   bool _isLoading = false;
+  String? _errorMessage;
   DateTime? _tokenExpiresAt;
 
   QrProvider();
@@ -13,6 +16,7 @@ class QrProvider extends ChangeNotifier {
   // ── Getters ─────────────────────────────────────────────────────────────
   String? get qrData => _qrData;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
   bool get hasData => _qrData != null && _qrData!.isNotEmpty;
   DateTime? get tokenExpiresAt => _tokenExpiresAt;
 
@@ -25,6 +29,7 @@ class QrProvider extends ChangeNotifier {
   // ── Generate secure token and QR URL ──────────────────────────────────
   Future<void> generateQrData() async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
@@ -46,14 +51,21 @@ class QrProvider extends ChangeNotifier {
       final expiresAt = DateTime.now().toUtc().add(const Duration(minutes: 15));
 
       // 3. Delete any existing tokens for this user (cleanup)
-      await client.from('emergency_tokens').delete().eq('patient_id', userId);
+      await client
+          .from('emergency_tokens')
+          .delete()
+          .eq('patient_id', userId)
+          .timeout(const Duration(seconds: 10));
 
       // 4. Insert new token
-      await client.from('emergency_tokens').insert({
-        'patient_id': userId,
-        'token': token,
-        'expires_at': expiresAt.toIso8601String(),
-      });
+      await client
+          .from('emergency_tokens')
+          .insert({
+            'patient_id': userId,
+            'token': token,
+            'expires_at': expiresAt.toIso8601String(),
+          })
+          .timeout(const Duration(seconds: 10));
 
       // 5. Build QR URL
       // TODO: Replace with your deployed domain
@@ -62,8 +74,14 @@ class QrProvider extends ChangeNotifier {
       _tokenExpiresAt = expiresAt;
 
       debugPrint('QR: Token generated, expires at $expiresAt');
+    } on TimeoutException catch (e) {
+      debugPrint('QR generation timeout: $e');
+      _errorMessage =
+          'Connection timed out. Please check your internet connection.';
+      _qrData = null;
     } catch (e) {
       debugPrint('QR generation error: $e');
+      _errorMessage = 'Failed to generate QR. Please try again.';
       _qrData = null;
     }
 

@@ -12,12 +12,12 @@ class ProfileRepository {
   /// Fetch the current user's profile.
   Future<ProfileModel> getProfile() async {
     final userId = _client.auth.currentUser!.id;
-    final data =
-        await _client
-            .from('profiles')
-            .select()
-            .eq('user_id', userId)
-            .maybeSingle();
+    final data = await _client
+        .from('profiles')
+        .select()
+        .eq('user_id', userId)
+        .maybeSingle()
+        .timeout(const Duration(seconds: 10));
 
     if (data == null) {
       return ProfileModel.empty();
@@ -31,12 +31,12 @@ class ProfileRepository {
     final json = profile.toJson();
     json['user_id'] = userId;
 
-    final data =
-        await _client
-            .from('profiles')
-            .upsert(json, onConflict: 'user_id')
-            .select()
-            .single();
+    final data = await _client
+        .from('profiles')
+        .upsert(json, onConflict: 'user_id')
+        .select()
+        .single()
+        .timeout(const Duration(seconds: 10));
 
     return ProfileModel.fromJson(data);
   }

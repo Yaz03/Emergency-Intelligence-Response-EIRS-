@@ -167,7 +167,7 @@ class _QrScreenState extends State<QrScreen> {
                 ? const CircularProgressIndicator()
                 : qrProvider.hasData
                 ? _buildQrCard(context, qrProvider.qrData!)
-                : _buildEmptyState(theme),
+                : _buildEmptyState(context, theme),
       ),
     );
   }
@@ -251,20 +251,30 @@ class _QrScreenState extends State<QrScreen> {
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme) {
+  Widget _buildEmptyState(BuildContext context, ThemeData theme) {
+    final qrProvider = context.read<QrProvider>();
+    final errorMsg = qrProvider.errorMessage;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
-          Icons.qr_code_2,
+          errorMsg != null ? Icons.error_outline : Icons.qr_code_2,
           size: 80,
-          color: theme.colorScheme.outlineVariant,
+          color:
+              errorMsg != null
+                  ? theme.colorScheme.error
+                  : theme.colorScheme.outlineVariant,
         ),
         const SizedBox(height: 16),
         Text(
-          'No QR data available',
+          errorMsg ?? 'No QR data available',
+          textAlign: TextAlign.center,
           style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+            color:
+                errorMsg != null
+                    ? theme.colorScheme.error
+                    : theme.colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 8),
