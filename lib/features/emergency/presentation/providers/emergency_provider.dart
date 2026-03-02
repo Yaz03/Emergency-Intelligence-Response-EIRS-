@@ -121,7 +121,7 @@ class EmergencyProvider extends ChangeNotifier {
       }
 
       final userName =
-          profile.fullName.isNotEmpty ? profile.fullName : 'A MediQR user';
+          profile.fullName.isNotEmpty ? profile.fullName : 'An EIRS user';
       final mapsLink = 'https://maps.google.com/?q=$lat,$lng';
       final locationStr = _locationName != null ? ' ($_locationName)' : '';
 

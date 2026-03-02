@@ -63,7 +63,7 @@ void main() async {
               ),
         ),
       ],
-      child: const MediQRApp(),
+      child: const EIRSApp(),
     ),
   );
 }

@@ -82,7 +82,7 @@ Patient registers → Fills medical profile → Generates QR code
 ## Project Structure
 
 ```
-MediQR/
+EIRS/
 ├── lib/                              # Flutter app source
 │   ├── main.dart                     # App entry point
 │   ├── app.dart                      # MaterialApp + routing
@@ -205,8 +205,8 @@ Run these in **Supabase SQL Editor** in this order:
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/Yaz03/MediQR.git
-cd MediQR
+git clone https://github.com/Yaz03/EIRS.git
+cd EIRS
 flutter pub get
 ```
 

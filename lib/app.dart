@@ -9,8 +9,8 @@ import 'features/auth/presentation/screens/register_screen.dart';
 import 'features/home/presentation/screens/home_screen.dart';
 
 /// Root widget – listens to [AuthProvider] to decide initial route.
-class MediQRApp extends StatelessWidget {
-  const MediQRApp({super.key});
+class EIRSApp extends StatelessWidget {
+  const EIRSApp({super.key});
 
   @override
   Widget build(BuildContext context) {

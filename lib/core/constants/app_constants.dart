@@ -10,7 +10,7 @@ class AppConstants {
 
   // ── Encryption ────────────────────────────────────────────────────────
   /// 32‑character AES‑256 key – **replace with server‑provided key in prod**.
-  static const String encryptionKey = 'MediQR2024SecureKey!@#4567890123';
+  static const String encryptionKey = 'EIRS2024SecureKey!@#4567890123';
   static const String encryptionIV = '1234567890123456'; // 16‑char IV
 
   // ── Blood Groups ──────────────────────────────────────────────────────

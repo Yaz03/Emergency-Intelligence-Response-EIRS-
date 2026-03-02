@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:mediqr/features/auth/presentation/providers/auth_provider.dart';
-import 'package:mediqr/features/profile/presentation/screens/profile_screen.dart';
-import 'package:mediqr/features/qr/presentation/screens/qr_screen.dart';
-import 'package:mediqr/features/emergency/presentation/screens/emergency_screen.dart';
-import 'package:mediqr/features/account/presentation/screens/account_screen.dart';
-import 'package:mediqr/features/profile/presentation/providers/profile_provider.dart';
+import 'package:eirs/features/auth/presentation/providers/auth_provider.dart';
+import 'package:eirs/features/profile/presentation/screens/profile_screen.dart';
+import 'package:eirs/features/qr/presentation/screens/qr_screen.dart';
+import 'package:eirs/features/emergency/presentation/screens/emergency_screen.dart';
+import 'package:eirs/features/account/presentation/screens/account_screen.dart';
+import 'package:eirs/features/profile/presentation/providers/profile_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

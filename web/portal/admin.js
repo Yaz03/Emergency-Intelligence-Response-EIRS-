@@ -1,5 +1,5 @@
 // ============================================================
-// MediQR Admin Dashboard v2 — JavaScript
+// EIRS Admin Dashboard v2 — JavaScript
 // Full analytics: Risk Score, Peak Hours, Growth, Handling Time,
 // Map (clustering + heatmap), Incident Table, CSV Export
 // ============================================================
@@ -546,7 +546,7 @@ function exportCSV() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `mediqr_incidents_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `eirs_incidents_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
 }
