@@ -206,10 +206,10 @@
                 if (result.data.session) {
                     // Check if user is a paramedic
                     var roleCheck = await sb.from('user_roles').select('role').eq('user_id', result.data.session.user.id).single();
-                    if (roleCheck.data && roleCheck.data.role === 'paramedic') {
+                    if (roleCheck.data && (roleCheck.data.role === 'paramedic' || roleCheck.data.role === 'admin')) {
                         redirectToDashboard();
                     } else {
-                        // Not a paramedic, sign them out
+                        // Not a paramedic or admin, sign them out
                         await sb.auth.signOut();
                         showError('Access denied. Only healthcare workers can log in here.');
                     }
@@ -250,8 +250,8 @@
                 var roleCheck = await sb.from('user_roles').select('role').eq('user_id', result.data.user.id).single();
                 console.log('Role check:', roleCheck.data, roleCheck.error);
 
-                if (!roleCheck.data || roleCheck.data.role !== 'paramedic') {
-                    // Not a paramedic — sign out and show error
+                if (!roleCheck.data || (roleCheck.data.role !== 'paramedic' && roleCheck.data.role !== 'admin')) {
+                    // Not a paramedic or admin — sign out and show error
                     await sb.auth.signOut();
                     showError('Access denied. Only healthcare workers (paramedics) can log in here. Contact admin to set up your account.');
                     $submitBtn.disabled = false;
