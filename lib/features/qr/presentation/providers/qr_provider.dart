@@ -47,8 +47,8 @@ class QrProvider extends ChangeNotifier {
       // 1. Generate a random secure token
       final token = _generateSecureToken();
 
-      // 2. Set expiry to 15 minutes from now
-      final expiresAt = DateTime.now().toUtc().add(const Duration(minutes: 15));
+      // 2. Set expiry to 1 year from now
+      final expiresAt = DateTime.now().toUtc().add(const Duration(days: 365));
 
       // 3. Delete any existing tokens for this user (cleanup)
       await client
